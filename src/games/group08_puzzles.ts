@@ -15,8 +15,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '💣',
     category: 'puzzles',
     color: '#64748b',
-    controlsHint: 'Tik tegels om veilig vrij te maken! Tik op Vlag-knop onderin om bommen te markeren.',
-    desc: 'Supersnelle 6x6 mijnenveger met veilige eerste klik en oneindige levels.',
+    controlsHint: 'Tap tiles to dig safely! Toggle Flag mode below to mark mines.',
+    desc: 'Fast 6x6 Minesweeper with endless levels.',
     create(rt): MiniGameInstance {
       let flagMode = false;
       let score = 0;
@@ -68,7 +68,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               } else if (!flags[i] && !rev[i]) {
                 if (mines[i]) {
                   rt.sfx.explode();
-                  rt.endGame(score, `BOEM! Mijn geraakt op ${score} pt!`);
+                  rt.endGame(score, `BOOM! Hit a mine at ${score} pt!`);
                   return;
                 }
                 rev[i] = true;
@@ -84,7 +84,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               }
             }
           }
-          rt.setStatus(flagMode ? '🚩 Vlag-modus AAN' : '⛏️ Graaf-modus AAN');
+          rt.setStatus(flagMode ? '🚩 Flag Mode ON' : '⛏️ Dig Mode ON');
         },
         render(r) {
           const c = r.ctx;
@@ -104,7 +104,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
             }
           }
           drawRoundedBox(c, 90, 515, 240, 52, 14, flagMode ? '#ef4444' : '#334155', '#fff');
-          drawBadgeText(c, flagMode ? '🚩 Vlaggen (Tik=Wissel)' : '⛏️ Graven (Tik=Vlag)', W / 2, 541, '#fff', 16);
+          drawBadgeText(c, flagMode ? '🚩 Flagging (Tap=Switch)' : '⛏️ Digging (Tap=Flag)', W / 2, 541, '#fff', 16);
         },
       };
     },
@@ -116,8 +116,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '🔌',
     category: 'puzzles',
     color: '#22c55e',
-    controlsHint: 'Sleep vanaf een gekleurde cirkel naar het bijpassende maatje om buizen te verbinden!',
-    desc: 'Verbind alle gekleurde puntenparen over het hele raster.',
+    controlsHint: 'Drag from a colored dot to its matching pair to connect pipes!',
+    desc: 'Connect all matching color pairs across the grid.',
     create(rt): MiniGameInstance {
       const pairs = [
         { a: [0, 0], b: [4, 1], color: '#ef4444' },
@@ -177,7 +177,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               paths = pairs.map((p) => [p.a as [number, number]]);
             }
           }
-          rt.setStatus('Sleep kleur naar gelijke kleur');
+          rt.setStatus('Drag each color to its matching dot');
         },
         render(r) {
           const c = r.ctx;
@@ -213,8 +213,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '📦',
     category: 'puzzles',
     color: '#d97706',
-    controlsHint: 'Swipe in een richting om kisten naar de groene doelen te duwen!',
-    desc: 'Klassieke magazijn-denkpuzzel met oplopende levels.',
+    controlsHint: 'Swipe in any direction to push crates onto the green targets!',
+    desc: 'Classic warehouse box-pushing puzzle.',
     create(rt): MiniGameInstance {
       let px = 1;
       let py = 3;
@@ -263,7 +263,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
           if (inp.swipe === 'down') move(0, 1);
           if (inp.swipe === 'left') move(-1, 0);
           if (inp.swipe === 'right') move(1, 0);
-          rt.setStatus('Swipe om 📦 op ❎ te duwen');
+          rt.setStatus('Swipe to push 📦 onto ❎');
         },
         onKey(k) {
           if (k === 'ArrowUp') move(0, -1);
@@ -293,8 +293,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '🔟',
     category: 'puzzles',
     color: '#38bdf8',
-    controlsHint: 'Tik op een blok naast het lege vak om 1 t/m 15 in de juiste volgorde te schuiven!',
-    desc: 'Klassieke schuifpuzzel op tijd.',
+    controlsHint: 'Tap a tile next to the gap to order 1 through 15!',
+    desc: 'Classic 15-tile sliding puzzle.',
     create(rt): MiniGameInstance {
       const tiles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 15];
       // Shuffle via valid moves so always solvable
@@ -332,12 +332,12 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
                   const pts = Math.max(100, 500 - moves * 5);
                   rt.setScore(pts);
                   rt.sfx.win();
-                  rt.endGame(pts, `Opgelost in ${moves} zetten!`);
+                  rt.endGame(pts, `Solved in ${moves} moves!`);
                 }
               }
             }
           }
-          rt.setStatus(`Zetten: ${moves} · Orden 1..15`);
+          rt.setStatus(`Moves: ${moves} · Order 1..15`);
         },
         render(r) {
           const c = r.ctx;
@@ -361,8 +361,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '💎',
     category: 'puzzles',
     color: '#ec4899',
-    controlsHint: 'Tik op 2 buur-edelstenen om te wisselen en rijen van 3+ op te blazen!',
-    desc: 'Snelle 60-seconden edelsteenjacht met kettingcombinaties.',
+    controlsHint: 'Tap two adjacent gems to swap and match 3+ in a row!',
+    desc: 'Fast gem-matching blitz with chain combos.',
     create(rt): MiniGameInstance {
       const gems = ['💎', '🍒', '🍋', '🍏', '🔮'];
       const grid = Array.from({ length: 36 }, () => Math.floor(Math.random() * 5));
@@ -405,7 +405,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
           timer -= dt;
           if (timer <= 0) {
             rt.sfx.win();
-            rt.endGame(score, `Tijd om! Gem Score: ${score}`);
+            rt.endGame(score, `Time's up! Gem Score: ${score}`);
             return;
           }
           if (inp.justPressed) {
@@ -427,7 +427,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               }
             }
           }
-          rt.setStatus(`Tijd: ${Math.ceil(timer)}s · Wissel buren`);
+          rt.setStatus(`Time: ${Math.ceil(timer)}s · Swap neighbors`);
         },
         render(r) {
           const c = r.ctx;
@@ -449,8 +449,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '🚙',
     category: 'puzzles',
     color: '#ef4444',
-    controlsHint: 'Tik op geparkeerde auto’s om ze voor- of achteruit te schuiven tot de rode auto vrij is!',
-    desc: 'Maak de parkeeruitgang rechts vrij in zo min mogelijk zetten.',
+    controlsHint: "Tap parked cars to slide them out of the red car's path!",
+    desc: 'Clear the exit lane on the right for the red car.',
     create(rt): MiniGameInstance {
       let cars = [
         { x: 1, y: 2, w: 2, h: 1, horiz: true, hero: true, color: '#ef4444' },
@@ -507,7 +507,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               }
             }
           }
-          rt.setStatus('Breng rode 🚗 naar uitgang →');
+          rt.setStatus('Guide red 🚗 to the exit →');
         },
         render(r) {
           const c = r.ctx;
@@ -528,8 +528,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '🎨',
     category: 'puzzles',
     color: '#6366f1',
-    controlsHint: 'Tik op vakjes volgens de getallen langs de rand om het geheime pixel-figuur te vinden!',
-    desc: 'Japanse logische tekenpuzzel op een snel 5x5 raster.',
+    controlsHint: 'Tap cells using the row & column clues to reveal the pixel art!',
+    desc: 'Logic picture puzzle on a quick 5x5 grid.',
     create(rt): MiniGameInstance {
       const presets = [
         [0,1,0,1,0, 1,1,1,1,1, 1,1,1,1,1, 0,1,1,1,0, 0,0,1,0,0],
@@ -570,7 +570,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               }
             }
           }
-          rt.setStatus(`Puzzels voltooid: ${score / 100}`);
+          rt.setStatus(`Puzzles solved: ${score / 100}`);
         },
         render(r) {
           const c = r.ctx;
@@ -597,8 +597,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '➕',
     category: 'puzzles',
     color: '#22c55e',
-    controlsHint: 'Tik getal → bewerking → getal tot je één tegel overhoudt die 24 is!',
-    desc: 'Snel hoofdrekenen: maak van 4 kaarten exact 24 met +, -, ×, ÷.',
+    controlsHint: 'Tap number → operator → number until one tile equals 24!',
+    desc: 'Quick mental math: combine 4 numbers to make 24.',
     create(rt): MiniGameInstance {
       const sets = [
         [3, 8, 2, 2],
@@ -655,7 +655,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               rt.sfx.tap();
             }
           }
-          rt.setStatus('Maak 24! TikReset bij vastlopen');
+          rt.setStatus('Make 24! Tap Reset if stuck');
         },
         render(r) {
           const c = r.ctx;
@@ -669,7 +669,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
             drawBadgeText(c, s, 69 + i * 94, 369, op === s ? '#000' : '#fff', 30);
           });
           drawRoundedBox(c, 110, 480, 200, 50, 14, '#475569');
-          drawBadgeText(c, '🔄 Reset Kaarten', W / 2, 505, '#fff', 16);
+          drawBadgeText(c, '🔄 Reset Cards', W / 2, 505, '#fff', 16);
         },
       };
     },
@@ -681,8 +681,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '🧠',
     category: 'puzzles',
     color: '#a855f7',
-    controlsHint: 'Kijk welke knoppen oplichten & tik de volgorde foutloos na!',
-    desc: 'Simon Says op topsnelheid: test hoe ver jouw kortetermijngeheugen reikt.',
+    controlsHint: 'Watch the glowing pads and repeat the sequence cleanly!',
+    desc: 'High-speed Simon Says memory challenge.',
     create(rt): MiniGameInstance {
       const seq: number[] = [Math.floor(Math.random() * 4)];
       let showIdx = 0;
@@ -729,11 +729,11 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               }
             } else {
               rt.sfx.explode();
-              rt.endGame(score, `Foute knop! Reeks: ${seq.length}`);
+              rt.endGame(score, `Wrong pad! Streak: ${seq.length}`);
               return;
             }
           }
-          rt.setStatus(showing ? `Kijk goed (${seq.length} stappen)...` : `Jouw beurt: ${inputIdx}/${seq.length}`);
+          rt.setStatus(showing ? `Watch closely (${seq.length} steps)...` : `Your turn: ${inputIdx}/${seq.length}`);
         },
         render(r) {
           const c = r.ctx;
@@ -756,8 +756,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     icon: '🐝',
     category: 'puzzles',
     color: '#eab308',
-    controlsHint: 'Tik een kolom om het genummerde blok te droppen & combineer gelijke getallen!',
-    desc: 'Drop & Merge: combineer 2→4→8→16→32 voordat de stapel het plafond raakt.',
+    controlsHint: 'Tap a column to drop the block & merge matching numbers!',
+    desc: 'Drop & merge numbers before the stack hits the top.',
     create(rt): MiniGameInstance {
       const cols: number[][] = [[], [], [], [], []];
       let nextVal = 2;
@@ -766,7 +766,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
         const col = cols[colIdx];
         if (col.length >= 7) {
           rt.sfx.explode();
-          rt.endGame(score, `Kolom vol! Score: ${score}`);
+          rt.endGame(score, `Column full! Score: ${score}`);
           return;
         }
         col.push(nextVal);
@@ -785,7 +785,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
             const colIdx = clamp(Math.floor((inp.x - 25) / 74), 0, 4);
             dropIn(colIdx);
           }
-          rt.setStatus(`Volgend blok: ${nextVal}`);
+          rt.setStatus(`Next block: ${nextVal}`);
         },
         render(r) {
           const c = r.ctx;

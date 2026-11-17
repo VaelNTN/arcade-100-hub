@@ -49,7 +49,7 @@ export function loadArcadeHubState(deviceId: string): ArcadeHubState {
   const base: ArcadeHubState = {
     deviceId,
     apiBaseUrl: defaultApi,
-    playerName: 'ArcadeSpeler',
+    playerName: 'ArcadePlayer',
     avatarId: 0,
     soundEnabled: true,
     favorites: [],
@@ -70,7 +70,7 @@ export function loadArcadeHubState(deviceId: string): ArcadeHubState {
       playerName:
         typeof p.playerName === 'string' && p.playerName.trim()
           ? p.playerName.trim()
-          : 'ArcadeSpeler',
+          : 'ArcadePlayer',
       avatarId: typeof p.avatarId === 'number' ? p.avatarId : 0,
       soundEnabled: p.soundEnabled !== false,
       favorites: Array.isArray(p.favorites) ? p.favorites : [],

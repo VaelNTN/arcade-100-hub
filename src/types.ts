@@ -19,15 +19,15 @@ export interface CategoryInfo {
 }
 
 export const CATEGORIES: CategoryInfo[] = [
-  { id: 'hoppers', label: 'Dieren & Parkour', icon: '🐾', color: '#22c55e' },
-  { id: 'fighters', label: 'Actie & Veerspel', icon: '🥋', color: '#ef4444' },
+  { id: 'hoppers', label: 'Animals & Hop', icon: '🐾', color: '#22c55e' },
+  { id: 'fighters', label: 'Action & Combat', icon: '🥋', color: '#ef4444' },
   { id: 'shooters', label: 'Tanks & Space', icon: '🚀', color: '#38bdf8' },
   { id: 'timing', label: 'One-Tap Timing', icon: '⚡', color: '#facc15' },
-  { id: 'runners', label: 'Runners & Ontwijken', icon: '🏃', color: '#fb923c' },
-  { id: 'physics', label: 'Bal & Fysica', icon: '🎱', color: '#a855f7' },
-  { id: 'puzzles', label: 'Puzzel & Brein', icon: '🧩', color: '#2dd4bf' },
-  { id: 'retro', label: 'Retro Klassiekers', icon: '👾', color: '#ec4899' },
-  { id: 'sports', label: 'Sport & Reactie', icon: '🏆', color: '#f59e0b' },
+  { id: 'runners', label: 'Runners & Dodge', icon: '🏃', color: '#fb923c' },
+  { id: 'physics', label: 'Ball & Physics', icon: '🎱', color: '#a855f7' },
+  { id: 'puzzles', label: 'Puzzle & Brain', icon: '🧩', color: '#2dd4bf' },
+  { id: 'retro', label: 'Retro Classics', icon: '👾', color: '#ec4899' },
+  { id: 'sports', label: 'Sports & Reflex', icon: '🏆', color: '#f59e0b' },
 ];
 
 export const W = 420;

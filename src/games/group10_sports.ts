@@ -17,8 +17,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '⚽',
     category: 'sports',
     color: '#22c55e',
-    controlsHint: 'Swipe omhoog met richting vanaf de bal om langs de keeper te schieten!',
-    desc: 'Krul strafschoppen in de kruising voor winstreeksen tegen een snelle keeper.',
+    controlsHint: 'Swipe upward from the ball to curl shots past the keeper!',
+    desc: 'Curve penalty kicks into the net past a diving keeper.',
     create(rt): MiniGameInstance {
       let bx = W / 2;
       let by = 520;
@@ -53,7 +53,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Strafschoppen gestopt! Score: ${score}`);
+                rt.endGame(score, `Keeper saved it! Score: ${score}`);
                 return;
               }
               reset();
@@ -67,14 +67,14 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
                 lives--;
                 rt.sfx.hit();
                 if (lives <= 0) {
-                  rt.endGame(score, `Over/naast geschoten! Score: ${score}`);
+                  rt.endGame(score, `Missed wide! Score: ${score}`);
                   return;
                 }
               }
               reset();
             }
           }
-          rt.setStatus('Swipe omhoog om te schieten!');
+          rt.setStatus('Swipe up to shoot!');
         },
         render(r) {
           const c = r.ctx;
@@ -94,8 +94,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '🏀',
     category: 'sports',
     color: '#f97316',
-    controlsHint: 'Swipe omhoog richting de basket voor zuivere swish-combo’s!',
-    desc: 'Laat de bal branden door meerdere schoten op rij te raken.',
+    controlsHint: 'Swipe upward toward the hoop for clean swishes!',
+    desc: 'Sink consecutive hoops as the basket shifts.',
     create(rt): MiniGameInstance {
       let bx = W / 2;
       let by = 520;
@@ -134,13 +134,13 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Eindscore: ${score} pt!`);
+                rt.endGame(score, `Final score: ${score} pt!`);
                 return;
               }
               reset();
             }
           }
-          rt.setStatus('Swipe omhoog naar de ring!');
+          rt.setStatus('Swipe up toward the hoop!');
         },
         render(r) {
           const c = r.ctx;
@@ -160,8 +160,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '🏹',
     category: 'sports',
     color: '#22c55e',
-    controlsHint: 'Houd ingedrukt om je boog op het bewegende doel te richten & laat los op de roos!',
-    desc: 'Raak het centrum van het schietbord voor 100 punten per pijl.',
+    controlsHint: 'Hold to aim at the moving target & release on the bullseye!',
+    desc: 'Hit the bullseye on moving targets for 100 pts per arrow.',
     create(rt): MiniGameInstance {
       let t = 0;
       let aimX = W / 2;
@@ -188,11 +188,11 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
             } else rt.sfx.hit();
             if (arrows <= 0) {
               rt.sfx.win();
-              rt.endGame(score, `7 pijlen geschoten! Score: ${score}`);
+              rt.endGame(score, `7 arrows shot! Score: ${score}`);
               return;
             }
           }
-          rt.setStatus(`Pijlen over: ${arrows}`);
+          rt.setStatus(`Arrows left: ${arrows}`);
         },
         render(r) {
           const c = r.ctx;
@@ -216,8 +216,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '🎳',
     category: 'sports',
     color: '#6366f1',
-    controlsHint: 'Swipe omhoog langs de baan om alle 10 kegels omver te bowlen!',
-    desc: 'Gooi strikes en spares met perfecte baanplaatsing.',
+    controlsHint: 'Swipe up the lane to bowl down all 10 pins!',
+    desc: 'Bowl strikes across 6 fast frames.',
     create(rt): MiniGameInstance {
       let bx = W / 2;
       let by = 540;
@@ -258,7 +258,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
               frames--;
               if (frames <= 0) {
                 rt.sfx.win();
-                rt.endGame(score, `6 frames klaar! Bowling score: ${score}`);
+                rt.endGame(score, `6 frames done! Bowling score: ${score}`);
                 return;
               }
               bx = W / 2;
@@ -266,7 +266,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
               pins = makePins();
             }
           }
-          rt.setStatus(`Frames over: ${frames}`);
+          rt.setStatus(`Frames left: ${frames}`);
         },
         render(r) {
           const c = r.ctx;
@@ -285,8 +285,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '🏓',
     category: 'sports',
     color: '#ef4444',
-    controlsHint: 'Sleep je rode batje om elke snelle rallybal terug te slaan!',
-    desc: 'Supersnelle tafeltennis-rally waarbij elke retour sneller gaat.',
+    controlsHint: 'Drag your red paddle to return every fast rally shot!',
+    desc: 'High-speed table tennis rally where every return speeds up.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let bx = W / 2;
@@ -317,7 +317,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
           }
           if (by > H + 20) {
             rt.sfx.hit();
-            rt.endGame(score, `Bal gemist! Rally score: ${score}`);
+            rt.endGame(score, `Missed the ball! Rally score: ${score}`);
             return;
           }
           rt.setStatus(`Rally Score: ${score}`);
@@ -344,8 +344,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '🏎️',
     category: 'sports',
     color: '#ef4444',
-    controlsHint: 'Wacht tot alle 5 rode lichten UITGAAN & tik zo snel mogelijk voor <200ms start!',
-    desc: 'Formule-1 startreflex test over 5 rondes.',
+    controlsHint: 'Wait for all 5 red lights to go OUT, then tap fast!',
+    desc: 'F1 lights-out reaction test across 5 rounds.',
     create(rt): MiniGameInstance {
       let lights = 0;
       let timer = 0.55;
@@ -359,7 +359,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
             timer -= dt;
             if (inp.justPressed) {
               rt.sfx.hit();
-              rt.endGame(score, `Valse start in ronde ${round}!`);
+              rt.endGame(score, `Jump start on round ${round}!`);
               return;
             }
             if (timer <= 0) {
@@ -383,7 +383,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
               rt.sfx.win();
               round++;
               if (round > 5) {
-                rt.endGame(score, `5 F1-starts voltooid! Laatste: ${ms}ms`);
+                rt.endGame(score, `5 F1 starts complete! Last: ${ms}ms`);
                 return;
               }
               phase = 'count';
@@ -391,7 +391,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
               timer = rand(0.5, 1.4);
             }
           }
-          rt.setStatus(phase === 'go' ? '🟢 NU TIKKEN!!' : `Start ${round}/5 · Wacht...`);
+          rt.setStatus(phase === 'go' ? '🟢 TAP NOW!!' : `Start ${round}/5 · Wait...`);
         },
         render(r) {
           const c = r.ctx;
@@ -400,7 +400,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
           for (let i = 0; i < 5; i++) {
             drawCircle(c, 75 + i * 67, 245, 22, phase === 'count' && i < lights ? '#ef4444' : '#334155', '#fff');
           }
-          drawBadgeText(c, phase === 'go' ? 'GO! GO! GO!' : 'Houd hand gereed...', W / 2, 390, phase === 'go' ? '#22c55e' : '#94a3b8', 26);
+          drawBadgeText(c, phase === 'go' ? 'GO! GO! GO!' : 'Get ready...', W / 2, 390, phase === 'go' ? '#22c55e' : '#94a3b8', 26);
         },
       };
     },
@@ -412,8 +412,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '🔨',
     category: 'sports',
     color: '#b45309',
-    controlsHint: 'Tik supersnel op mollige mollen 🐹, maar tik NOOIT op bommen 💣!',
-    desc: '30-seconden reactiejacht op 9 holletjes.',
+    controlsHint: 'Tap moles 🐹 fast — NEVER tap bombs 💣!',
+    desc: '30-second reflex hunt across 9 burrows.',
     create(rt): MiniGameInstance {
       const holes = Array.from({ length: 9 }, () => ({ active: false, bomb: false, t: 0 }));
       let score = 0;
@@ -424,7 +424,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
           timer -= dt;
           if (timer <= 0) {
             rt.sfx.win();
-            rt.endGame(score, `Mollen gevangen! Eindscore: ${score}`);
+            rt.endGame(score, `Moles whacked! Final score: ${score}`);
             return;
           }
           spawnT -= dt;
@@ -457,7 +457,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
               }
             }
           }
-          rt.setStatus(`Tijd: ${Math.ceil(timer)}s`);
+          rt.setStatus(`Time: ${Math.ceil(timer)}s`);
         },
         render(r) {
           const c = r.ctx;
@@ -479,8 +479,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '🍉',
     category: 'sports',
     color: '#22c55e',
-    controlsHint: 'Sleep vliegensvlug door rondvliegend fruit en vermijd zwarte bommen!',
-    desc: 'Hak meloenen, appels en bananen doormidden in vloeiende swipes.',
+    controlsHint: 'Swipe through flying fruit and avoid black bombs!',
+    desc: 'Slice melons, apples, and bananas in fast swipes.',
     create(rt): MiniGameInstance {
       const fruits = ['🍉', '🍎', '🍌', '🍍', '🍊'];
       const items: { x: number; y: number; vx: number; vy: number; icon: string; bomb: boolean }[] = [];
@@ -511,7 +511,7 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
               items.splice(i, 1);
               if (it.bomb) {
                 rt.sfx.explode();
-                rt.endGame(score, `Bom doormidden gesneden! Score: ${score}`);
+                rt.endGame(score, `Sliced a bomb! Score: ${score}`);
                 return;
               }
               score += 25;
@@ -524,14 +524,14 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
                 lives--;
                 rt.sfx.hit();
                 if (lives <= 0) {
-                  rt.endGame(score, `Te veel fruit gemist (${score} pt)!`);
+                  rt.endGame(score, `Missed too much fruit (${score} pt)!`);
                   return;
                 }
               }
               items.splice(i, 1);
             }
           }
-          rt.setStatus(`Levens: ${lives} · Swipe door fruit!`);
+          rt.setStatus(`Lives: ${lives} · Swipe through fruit!`);
         },
         render(r) {
           const c = r.ctx;
@@ -549,8 +549,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '🪢',
     category: 'sports',
     color: '#fb923c',
-    controlsHint: 'Tik zo SNEL mogelijk om het touw met vlaggetje naar jouw linkerkant te trekken!',
-    desc: 'Krachtig touwtrekken tegen steeds sterkere tegenstanders.',
+    controlsHint: 'Tap as FAST as you can to pull the flag to your side!',
+    desc: 'Tap-powered tug of war against stronger rivals.',
     create(rt): MiniGameInstance {
       let rope = 0; // -1 win, +1 lose
       let aiPull = 0.45;
@@ -572,10 +572,10 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
             rt.sfx.win();
           } else if (rope >= 1) {
             rt.sfx.hit();
-            rt.endGame(score, `Over de lijn getrokken in ronde ${round}!`);
+            rt.endGame(score, `Pulled across the line in round ${round}!`);
             return;
           }
-          rt.setStatus(`Ronde ${round} · Tik snel!`);
+          rt.setStatus(`Round ${round} · Tap fast!`);
         },
         render(r) {
           const c = r.ctx;
@@ -609,8 +609,8 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
     icon: '🎣',
     category: 'sports',
     color: '#0ea5e9',
-    controlsHint: 'Houd ingedrukt om de groene lijn omhoog te halen & houd de vis binnen de balk!',
-    desc: 'Houd je vis precies in het groene vanggebied tot de vangstbalk op 100% staat.',
+    controlsHint: 'Hold to raise the green bar and keep the fish inside!',
+    desc: 'Keep the fish inside the green catch bar until 100%.',
     create(rt): MiniGameInstance {
       let barY = 320;
       let fishY = 300;
@@ -636,10 +636,10 @@ export const GROUP_10_SPORTS: MiniGameDef[] = [
             rt.sfx.win();
           } else if (progress <= 0) {
             rt.sfx.hit();
-            rt.endGame(score, `Vis ontsnapt! Score: ${score}`);
+            rt.endGame(score, `Fish escaped! Score: ${score}`);
             return;
           }
-          rt.setStatus(`Vangst: ${Math.round(progress * 100)}%`);
+          rt.setStatus(`Catch: ${Math.round(progress * 100)}%`);
         },
         render(r) {
           const c = r.ctx;

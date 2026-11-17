@@ -20,8 +20,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '🤖',
     category: 'timing',
     color: '#06b6d4',
-    controlsHint: 'Tik midden op binnenkomende EMP-drones om kettingreacties te veroorzaken!',
-    desc: 'Verdedig de energie-reactor centraal in beeld door zwermen drones op tijd te zappen.',
+    controlsHint: 'Tap incoming EMP drones before they hit your reactor!',
+    desc: 'Defend the central core by zapping incoming drone swarms.',
     create(rt): MiniGameInstance {
       let score = 0;
       let lives = 3;
@@ -64,12 +64,12 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Reactor uitgeschakeld! Score: ${score}`);
+                rt.endGame(score, `Reactor overloaded! Score: ${score}`);
                 return;
               }
             }
           }
-          rt.setStatus(`Drones geëlimineerd: ${score / 20}`);
+          rt.setStatus(`Drones zapped: ${score / 20}`);
         },
         render(r) {
           const c = r.ctx;
@@ -90,8 +90,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '💥',
     category: 'timing',
     color: '#84cc16',
-    controlsHint: 'Houd ingedrukt om mortierafstand op te laden & laat los op naderende tanks!',
-    desc: 'Verdedig de loopgraaf: schat exact hoelang je de mortierknop moet indrukken.',
+    controlsHint: 'Hold to charge mortar range & release on approaching tanks!',
+    desc: 'Defend the trench by timing your mortar charge.',
     create(rt): MiniGameInstance {
       let charge = 0;
       let shells: { x: number; y: number; vx: number; vy: number }[] = [];
@@ -136,12 +136,12 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Loopgraaf verloren! Score: ${score}`);
+                rt.endGame(score, `Trench lost! Score: ${score}`);
                 return;
               }
             }
           }
-          rt.setStatus('Houd vast = verder schieten');
+          rt.setStatus('Hold longer = shoot farther');
         },
         render(r) {
           const c = r.ctx;
@@ -163,8 +163,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '🌉',
     category: 'timing',
     color: '#ef4444',
-    controlsHint: 'Houd ingedrukt om de brug te laten groeien; laat los zodra hij lang genoeg is!',
-    desc: 'De klassieke millimeter-uitdaging: te kort of te lang en je stort omlaag.',
+    controlsHint: 'Hold to grow the bridge; release when it matches the gap!',
+    desc: 'Classic precision bridge challenge: too short or too long and you fall.',
     create(rt): MiniGameInstance {
       let state: 'idle' | 'grow' | 'fall' | 'walk' = 'idle';
       let stickLen = 0;
@@ -206,12 +206,12 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
                 state = 'idle';
               } else {
                 rt.sfx.explode();
-                rt.endGame(score, `Brug ${bridgeEnd < p2.x ? 'te kort' : 'te lang'}! Score: ${score}`);
+                rt.endGame(score, `Bridge ${bridgeEnd < p2.x ? 'too short' : 'too long'}! Score: ${score}`);
                 return;
               }
             }
           }
-          rt.setStatus(`Bruggen overgestoken · ${score} pt`);
+          rt.setStatus(`Bridges crossed · ${score} pt`);
         },
         render(r) {
           const c = r.ctx;
@@ -240,8 +240,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '🧱',
     category: 'timing',
     color: '#a855f7',
-    controlsHint: 'Tik om het schuivende blok precies bovenop de toren te plaatsen!',
-    desc: 'Bouw een wolkenkrabber tot aan de sterren. Alles wat uitsteekt wordt eraf gesneden!',
+    controlsHint: 'Tap to drop the sliding block cleanly onto the tower!',
+    desc: 'Build a skyscraper sky-high — overhangs get sliced off!',
     create(rt): MiniGameInstance {
       const blocks: { x: number; w: number; color: string }[] = [{ x: 110, w: 200, color: '#8b5cf6' }];
       let curX = 40;
@@ -266,7 +266,7 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
             const overlap = right - left;
             if (overlap <= 4) {
               rt.sfx.explode();
-              rt.endGame(score, `Toren ingestort op verdieping ${blocks.length}!`);
+              rt.endGame(score, `Tower collapsed at floor ${blocks.length}!`);
               return;
             }
             const perfect = Math.abs(overlap - top.w) < 6;
@@ -279,7 +279,7 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
             rt.setScore(score);
             rt.sfx.score();
           }
-          rt.setStatus(`Verdiepingen: ${blocks.length}`);
+          rt.setStatus(`Floors: ${blocks.length}`);
         },
         render(r) {
           const c = r.ctx;
@@ -302,8 +302,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '🎨',
     category: 'timing',
     color: '#ec4899',
-    controlsHint: 'Tik om de bal omhoog te stuiteren door het bijpassende kleursegment!',
-    desc: 'Wacht het perfecte moment af terwijl kleurwielen ronddraaien.',
+    controlsHint: 'Tap to bounce the ball through the matching color segment!',
+    desc: 'Time your jumps carefully through spinning color rings.',
     create(rt): MiniGameInstance {
       const cols = ['#ef4444', '#38bdf8', '#facc15', '#22c55e'];
       let ballColorIdx = 0;
@@ -343,7 +343,7 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
               const seg = Math.floor(rel / (Math.PI / 2)) % 4;
               if (seg !== ballColorIdx) {
                 rt.sfx.hit();
-                rt.endGame(score, `Verkeerde kleur geraakt op ${score} pt!`);
+                rt.endGame(score, `Hit the wrong color at ${score} pt!`);
                 return;
               }
             }
@@ -356,9 +356,9 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
           }
           if (py > H + 30) {
             rt.sfx.hit();
-            rt.endGame(score, `Gevallen na ${score} punten!`);
+            rt.endGame(score, `Fell down at ${score} pt!`);
           }
-          rt.setStatus(`Ringen gehaald: ${score / 25}`);
+          rt.setStatus(`Rings cleared: ${score / 25}`);
         },
         render(r) {
           const c = r.ctx;
@@ -384,8 +384,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '🔪',
     category: 'timing',
     color: '#fb923c',
-    controlsHint: 'Tik om het mes omhoog te gooien zonder een reeds vastzittend mes te raken!',
-    desc: 'Raak de draaiende boomstam met alle messen en vermijd metaal-op-metaal!',
+    controlsHint: 'Tap to throw knives into the log without hitting other knives!',
+    desc: 'Stick every knife into the spinning log without clashing.',
     create(rt): MiniGameInstance {
       let wheelAng = 0;
       let wheelSpeed = 2.0;
@@ -408,7 +408,7 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
               const clash = stuck.some((a) => Math.abs(Math.atan2(Math.sin(a - hitRel), Math.cos(a - hitRel))) < 0.24);
               if (clash) {
                 rt.sfx.explode();
-                rt.endGame(score, `Mes geketst in level ${stage}! Score: ${score}`);
+                rt.endGame(score, `Knife clashed on stage ${stage}! Score: ${score}`);
                 return;
               }
               stuck.push(hitRel);
@@ -429,7 +429,7 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
               }
             }
           }
-          rt.setStatus(`Level ${stage} · Messen te gaan: ${left}`);
+          rt.setStatus(`Stage ${stage} · Knives left: ${left}`);
         },
         render(r) {
           const c = r.ctx;
@@ -460,8 +460,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '🌀',
     category: 'timing',
     color: '#f43f5e',
-    controlsHint: 'Sleep links/rechts om de toren te draaien zodat de bal door de gaten valt!',
-    desc: 'Stuitere door spiraalvormige verdiepingen en vermijd de gloeiend rode gevarenzones.',
+    controlsHint: 'Drag left/right to rotate the tower and drop through gaps!',
+    desc: 'Bounce down spiral platforms while avoiding red hazard zones.',
     create(rt): MiniGameInstance {
       let rot = 0;
       let ballY = 230;
@@ -485,7 +485,7 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
               if (!inGap) {
                 if (onBad) {
                   rt.sfx.explode();
-                  rt.endGame(score, `Rood blok geraakt op ${score} pt!`);
+                  rt.endGame(score, `Hit a red hazard at ${score} pt!`);
                   return;
                 }
                 ballY = rg.y - 16;
@@ -509,7 +509,7 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
               }
             }
           }
-          rt.setStatus(`Verdiepingen gevallen: ${score / 20}`);
+          rt.setStatus(`Levels dropped: ${score / 20}`);
         },
         render(r) {
           const c = r.ctx;
@@ -534,8 +534,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '🚀',
     category: 'timing',
     color: '#f97316',
-    controlsHint: 'Tik om je raketmotoren korte stuwstoten te geven door de laserpoorten!',
-    desc: 'Snelle ruimtevlucht tussen bewegende plasma-obstakels.',
+    controlsHint: 'Tap to pulse your thrusters through the plasma gates!',
+    desc: 'Fast space flight between glowing plasma barriers.',
     create(rt): MiniGameInstance {
       let py = 300;
       let vy = 0;
@@ -559,7 +559,7 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
             }
             if (Math.abs(p.x - 95) < 30 && (py < p.gapY - 70 || py > p.gapY + 70)) {
               rt.sfx.explode();
-              rt.endGame(score, `Laserpoort geraakt (${score} pt)!`);
+              rt.endGame(score, `Hit a laser gate (${score} pt)!`);
               return;
             }
             if (p.x < -50) {
@@ -570,9 +570,9 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
           }
           if (py < 15 || py > H - 15) {
             rt.sfx.hit();
-            rt.endGame(score, `Raket gecrasht (${score} pt)!`);
+            rt.endGame(score, `Rocket crashed (${score} pt)!`);
           }
-          rt.setStatus(`Poorten gepasseerd: ${score / 10}`);
+          rt.setStatus(`Gates passed: ${score / 10}`);
         },
         render(r) {
           const c = r.ctx;
@@ -593,8 +593,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '⚡',
     category: 'timing',
     color: '#22d3ee',
-    controlsHint: 'Tik om bij elke bocht 90° van richting te wisselen op het smalle pad!',
-    desc: 'Blijf op het zwevende neon-pad! Eén verkeerde bocht en je valt de diepte in.',
+    controlsHint: 'Tap to switch direction along the narrow neon track!',
+    desc: 'Stay on the floating neon path — one wrong turn and you fall.',
     create(rt): MiniGameInstance {
       let bx = W / 2;
       let dir = 1;
@@ -621,10 +621,10 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
           const under = segs.find((s) => Math.abs(s.y + 40 - 480) <= 44);
           if (!under || bx < under.x - 8 || bx > under.x + under.w + 8) {
             rt.sfx.hit();
-            rt.endGame(score, `Van het ZigZag-pad gegleden (${score} pt)!`);
+            rt.endGame(score, `Slipped off the track (${score} pt)!`);
             return;
           }
-          rt.setStatus(`Afstand: ${score}`);
+          rt.setStatus(`Distance: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -642,8 +642,8 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
     icon: '🚁',
     category: 'timing',
     color: '#eab308',
-    controlsHint: 'Tik om je helikopter direct naar de andere kant te laten sturen!',
-    desc: 'Stijg verticaal tussen schommelende sloopkogels met vlijmscherpe wisselingen.',
+    controlsHint: "Tap to flip your helicopter's horizontal direction!",
+    desc: 'Climb vertically between swinging wrecking balls.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let vx = 170;
@@ -673,7 +673,7 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
             }
             if (Math.abs(b.y - 490) < 20 && Math.abs(px - swingX) > 62) {
               rt.sfx.explode();
-              rt.endGame(score, `Sloopkogel geraakt! Score: ${score}`);
+              rt.endGame(score, `Hit a wrecking ball! Score: ${score}`);
               return;
             }
             if (b.y > H + 40) {
@@ -684,9 +684,9 @@ export const GROUP_04_TIMING: MiniGameDef[] = [
           }
           if (px < 16 || px > W - 16) {
             rt.sfx.hit();
-            rt.endGame(score, `Tegen de zijkant gevlogen (${score} pt)!`);
+            rt.endGame(score, `Crashed into wall (${score} pt)!`);
           }
-          rt.setStatus(`Hoogte: ${score}m`);
+          rt.setStatus(`Height: ${score}m`);
         },
         render(r) {
           const c = r.ctx;

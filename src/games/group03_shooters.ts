@@ -21,8 +21,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '🪖',
     category: 'shooters',
     color: '#22c55e',
-    controlsHint: 'Sleep naar een doel en laat los om ketsende tankkogels af te vuren!',
-    desc: 'Kogels ketsen tegen arena-wanden! Raak vijandelijke pantsertanks via directe of bank-shots.',
+    controlsHint: 'Aim and release to fire ricocheting tank shells!',
+    desc: 'Shells bounce off walls! Destroy enemy tanks with bank shots.',
     create(rt): MiniGameInstance {
       let aim = { x: W / 2, y: 200 };
       const shells: { x: number; y: number; vx: number; vy: number; b: number }[] = [];
@@ -75,10 +75,10 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
             if (s.b < 0) shells.splice(i, 1);
           }
           if (ammo <= 0 && shells.length === 0) {
-            rt.endGame(score, `Munitie op! Eindscore: ${score}`);
+            rt.endGame(score, `Out of ammo! Final score: ${score}`);
             return;
           }
-          rt.setStatus(`Granaten over: ${ammo}`);
+          rt.setStatus(`Shells left: ${ammo}`);
         },
         render(r) {
           const c = r.ctx;
@@ -107,8 +107,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '👾',
     category: 'shooters',
     color: '#38bdf8',
-    controlsHint: 'Sleep schip links/rechts — laser schiet automatisch op de naderende UFO-vloot!',
-    desc: 'Klassieke alien-formaties die steeds sneller dalen, plus bonus-vliegende schotels.',
+    controlsHint: 'Drag ship left/right — auto-fire lasers at incoming aliens!',
+    desc: 'Classic alien waves descending faster every level.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let fireT = 0;
@@ -160,7 +160,7 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
             if (Math.random() < 0.003 * wave) eBullets.push({ x: a.x, y: a.y + 12 });
             if (a.y > 530) {
               rt.sfx.explode();
-              rt.endGame(score, `Aliens geland in wave ${wave}!`);
+              rt.endGame(score, `Aliens landed on wave ${wave}!`);
               return;
             }
           }
@@ -172,7 +172,7 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
             eBullets[i].y += 250 * dt;
             if (Math.hypot(eBullets[i].x - px, eBullets[i].y - 565) < 22) {
               rt.sfx.explode();
-              rt.endGame(score, `Neergeschoten in wave ${wave}!`);
+              rt.endGame(score, `Shot down on wave ${wave}!`);
               return;
             }
             if (eBullets[i].y > H) eBullets.splice(i, 1);
@@ -204,8 +204,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '🎆',
     category: 'shooters',
     color: '#c084fc',
-    controlsHint: 'Sleep je neon-kern rond en overleef de draaiende kogelspiralen!',
-    desc: 'Pure bullet-hell ontwijking: verzamel sterren tussen hypnotiserende laserpatronen.',
+    controlsHint: 'Drag your neon core and survive spinning bullet spirals!',
+    desc: 'Pure bullet-hell dodging: grab stars amid hypnotic bullet patterns.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let py = 490;
@@ -243,12 +243,12 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
             s.y += s.vy * dt;
             if (Math.hypot(s.x - px, s.y - py) < 13) {
               rt.sfx.explode();
-              rt.endGame(score, `Geraakt in de kogelstorm! (${score} pt)`);
+              rt.endGame(score, `Hit in the bullet storm! (${score} pt)`);
               return;
             }
             if (s.x < -20 || s.x > W + 20 || s.y < -20 || s.y > H + 20) shots.splice(i, 1);
           }
-          rt.setStatus(`Score: ${score} · Pak ⭐ voor +80`);
+          rt.setStatus(`Score: ${score} · Grab ⭐ for +80`);
         },
         render(r) {
           const c = r.ctx;
@@ -268,8 +268,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '✈️',
     category: 'shooters',
     color: '#60a5fa',
-    controlsHint: 'Sleep je gevechtsvliegtuig over de oceaan & knal vijandige squadrons uit de lucht!',
-    desc: 'Verticale arcade-luchtgevechten met dubbele boordkanonnen en naderende bommenwerpers.',
+    controlsHint: 'Drag your fighter jet & blast enemy squadrons out of the sky!',
+    desc: 'Vertical arcade dogfights with twin cannons and enemy bombers.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let py = 540;
@@ -323,12 +323,12 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Luchtgevecht voorbij: ${score} pt!`);
+                rt.endGame(score, `Dogfight over: ${score} pt!`);
                 return;
               }
             } else if (p.y > H + 30) planes.splice(i, 1);
           }
-          rt.setStatus(`Luchtoverwinningen: ${Math.floor(score / 30)}`);
+          rt.setStatus(`Aerial kills: ${Math.floor(score / 30)}`);
         },
         render(r) {
           const c = r.ctx;
@@ -348,8 +348,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '☄️',
     category: 'shooters',
     color: '#94a3b8',
-    controlsHint: 'Tik links/rechts om je ruimteschip te draaien — stuw & schiet automatisch!',
-    desc: '360° zweven in de asteroïdengordel. Breek rotsblokken in stukjes en ontwijk inslagen.',
+    controlsHint: 'Hold left/right to steer your ship — auto-thrust & fire!',
+    desc: '360° asteroid belt flight. Split boulders and avoid impacts.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let py = H / 2;
@@ -410,12 +410,12 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
               rt.sfx.hit();
               rk.y = 30;
               if (lives <= 0) {
-                rt.endGame(score, `Asteroïde-inslag bij ${score} pt!`);
+                rt.endGame(score, `Asteroid impact at ${score} pt!`);
                 return;
               }
             }
           }
-          rt.setStatus(`Stuur: tik links/rechts`);
+          rt.setStatus(`Steer: hold left/right`);
         },
         render(r) {
           const c = r.ctx;
@@ -439,8 +439,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '🛰️',
     category: 'shooters',
     color: '#ef4444',
-    controlsHint: 'Tik ergens in de lucht om de bunker-koepel daarheen te laten vuren!',
-    desc: 'Verdedig je bunker beneden tegen vallende parachutisten en snelle bommen.',
+    controlsHint: 'Tap anywhere in the sky to fire your bunker turret!',
+    desc: 'Defend your ground bunker from dropping paratroopers.',
     create(rt): MiniGameInstance {
       let barrelAng = -Math.PI / 2;
       let score = 0;
@@ -486,12 +486,12 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Bunker gevallen na ${score} pt!`);
+                rt.endGame(score, `Bunker breached at ${score} pt!`);
                 return;
               }
             }
           }
-          rt.setStatus(`Verdedigd: ${score} pt`);
+          rt.setStatus(`Defended: ${score} pt`);
         },
         render(r) {
           const c = r.ctx;
@@ -518,8 +518,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '🚤',
     category: 'shooters',
     color: '#0284c7',
-    controlsHint: 'Houd ingedrukt om met je duikboot te stijgen & vuur automatisch torpedo’s!',
-    desc: 'Vaar door diepzeekloof, knal mijnen kapot en verzamel zonk-schatten.',
+    controlsHint: 'Hold to ascend your sub while firing auto-torpedoes!',
+    desc: 'Navigate deep trenches, blast sea mines, and grab gems.',
     create(rt): MiniGameInstance {
       let py = 320;
       let vy = 0;
@@ -559,7 +559,7 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
             if (Math.hypot(85 - m.x, py - m.y) < 28) {
               if (m.bad) {
                 rt.sfx.explode();
-                rt.endGame(score, `Zeemijn geraakt op ${score} pt!`);
+                rt.endGame(score, `Hit a sea mine at ${score} pt!`);
                 return;
               } else {
                 score += 45;
@@ -574,7 +574,7 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
               m.y = rand(110, 540);
             }
           }
-          rt.setStatus(`Diepzee Score: ${score}`);
+          rt.setStatus(`Deep Sea Score: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -593,8 +593,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '🎯',
     category: 'shooters',
     color: '#10b981',
-    controlsHint: 'Sleep het vizier over het doel (compenseer ademhaling!) en laat los om te schieten!',
-    desc: 'Scherpschuttersoefening op bewegende doelen met ademhalingstrilling.',
+    controlsHint: 'Drag scope onto the target and release to fire!',
+    desc: 'Precision sniper range with moving targets and breathing sway.',
     create(rt): MiniGameInstance {
       let sx = W / 2;
       let sy = 320;
@@ -634,7 +634,7 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
               return;
             }
           }
-          rt.setStatus(`Kogels over: ${ammo}`);
+          rt.setStatus(`Rounds left: ${ammo}`);
         },
         render(r) {
           const c = r.ctx;
@@ -664,8 +664,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '🪞',
     category: 'shooters',
     color: '#2dd4bf',
-    controlsHint: 'Tik op de draaiende spiegels om de laser in de juiste hoek naar het kristal te kaatsen!',
-    desc: 'Puzzel-shooter: richt 1 laserstraal door spiegels om alle edelstenen te raken.',
+    controlsHint: 'Tap mirrors to bounce the laser beam into the crystal!',
+    desc: 'Puzzle shooter: angle mirrors to bounce one laser onto gems.',
     create(rt): MiniGameInstance {
       let score = 0;
       let level = 1;
@@ -706,7 +706,7 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
               target = { x: 330, y: Math.random() < 0.5 ? 95 : 430 };
             }
           }
-          rt.setStatus(`Level ${level} · Tik op spiegels`);
+          rt.setStatus(`Level ${level} · Tap mirrors`);
         },
         render(r) {
           const c = r.ctx;
@@ -744,8 +744,8 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
     icon: '🏰',
     category: 'shooters',
     color: '#fb923c',
-    controlsHint: 'Sleep terug vanaf het kanon en laat los om torens met ridders omver te kegelen!',
-    desc: 'Katapult-belegering: haal hele kastelen neer met zo min mogelijk kanonskogels.',
+    controlsHint: 'Drag back from the cannon and release to topple castle towers!',
+    desc: 'Siege artillery: smash castle blocks with limited cannonballs.',
     create(rt): MiniGameInstance {
       let drag: { x: number; y: number } | null = null;
       let balls: { x: number; y: number; vx: number; vy: number }[] = [];
@@ -794,10 +794,10 @@ export const GROUP_03_SHOOTERS: MiniGameDef[] = [
             }));
           }
           if (ammo <= 0 && balls.length === 0) {
-            rt.endGame(score, `Belegering voorbij! Score: ${score}`);
+            rt.endGame(score, `Siege ended! Score: ${score}`);
             return;
           }
-          rt.setStatus(`Kanonkogels over: ${ammo}`);
+          rt.setStatus(`Cannonballs left: ${ammo}`);
         },
         render(r) {
           const c = r.ctx;

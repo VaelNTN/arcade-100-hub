@@ -17,8 +17,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '🐍',
     category: 'retro',
     color: '#22c55e',
-    controlsHint: 'Swipe (of tik naar richting) om je neon-slang naar appels te sturen!',
-    desc: 'Klassieke slang in een gloeiende neon-arena zonder de rand of jezelf te raken.',
+    controlsHint: 'Swipe in any direction to steer your neon snake to apples!',
+    desc: 'Classic neon snake without hitting walls or your tail.',
     create(rt): MiniGameInstance {
       let body = [
         { x: 10, y: 12 },
@@ -44,7 +44,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
             const head = { x: body[0].x + dir.x, y: body[0].y + dir.y };
             if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 24 || body.some((b) => b.x === head.x && b.y === head.y)) {
               rt.sfx.explode();
-              rt.endGame(score, `Slang gebotst op lengte ${body.length}!`);
+              rt.endGame(score, `Snake crashed at length ${body.length}!`);
               return;
             }
             body.unshift(head);
@@ -55,7 +55,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
               food = { x: Math.floor(Math.random() * 20), y: Math.floor(Math.random() * 24) };
             } else body.pop();
           }
-          rt.setStatus(`Lengte: ${body.length}`);
+          rt.setStatus(`Length: ${body.length}`);
         },
         onKey(k) {
           if (k === 'ArrowUp') steer(0, -1);
@@ -82,8 +82,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '🗺️',
     category: 'retro',
     color: '#ec4899',
-    controlsHint: 'Sleep rond om gebied buiten je basis te tekenen & sluit je lus om land te veroveren!',
-    desc: 'Verover het meeste land in Paper.io-stijl terwijl bots proberen jouw spoor door te snijden.',
+    controlsHint: 'Swipe to loop outside your base and claim territory!',
+    desc: 'Claim territory Paper.io-style while dodging rival bots.',
     create(rt): MiniGameInstance {
       const N = 20;
       const grid = Array(N * N).fill(0); // 1 = owned, 2 = trail
@@ -121,7 +121,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
             const cur = grid[gy * N + gx];
             if (cur === 2) {
               rt.sfx.explode();
-              rt.endGame(score, `Je eigen spoor geraakt! Veroverd: ${score}%`);
+              rt.endGame(score, `Hit your own trail! Claimed: ${score} pt`);
               return;
             }
             if (cur === 1) {
@@ -155,11 +155,11 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
             bot.y = clamp(bot.y + bot.dy, 0, N - 1);
             if (grid[bot.y * N + bot.x] === 2) {
               rt.sfx.explode();
-              rt.endGame(score, `Bot sneed jouw spoor door! (${score} pt)`);
+              rt.endGame(score, `Bot cut your trail! (${score} pt)`);
               return;
             }
           }
-          rt.setStatus(`Gebied: ${score} pt · Swipe om te sturen`);
+          rt.setStatus(`Territory: ${score} pt · Swipe to steer`);
         },
         render(r) {
           const c = r.ctx;
@@ -184,8 +184,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '🟡',
     category: 'retro',
     color: '#facc15',
-    controlsHint: 'Swipe (of tik richting) om gele stippen op te eten & spookjes te ontwijken!',
-    desc: 'Retro doolhof-achtervolging met power-pellets waarmee je spoken verorbert.',
+    controlsHint: 'Swipe to eat yellow pellets & dodge ghosts!',
+    desc: 'Retro maze chase with corner power pellets.',
     create(rt): MiniGameInstance {
       const W_G = 11;
       const H_G = 11;
@@ -254,7 +254,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
                   rt.sfx.win();
                 } else {
                   rt.sfx.explode();
-                  rt.endGame(score, `Gepakt door een spook! Score: ${score}`);
+                  rt.endGame(score, `Caught by a ghost! Score: ${score}`);
                   return;
                 }
               }
@@ -266,7 +266,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
               rt.sfx.win();
             }
           }
-          rt.setStatus(powerT > 0 ? `⚡ POWER: ${Math.ceil(powerT)}s` : 'Swipe om te sturen');
+          rt.setStatus(powerT > 0 ? `⚡ POWER: ${Math.ceil(powerT)}s` : 'Swipe to steer');
         },
         render(r) {
           const c = r.ctx;
@@ -296,8 +296,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '🟦',
     category: 'retro',
     color: '#38bdf8',
-    controlsHint: 'Tik onderin: LINKS · DRAAI · RECHTS of swipe omlaag voor hard-drop!',
-    desc: 'Stapel vallende tetromino’s en wis volle horizontale rijen.',
+    controlsHint: 'Tap LEFT · ROTATE · RIGHT or swipe down to hard-drop!',
+    desc: 'Stack falling blocks and clear full horizontal rows.',
     create(rt): MiniGameInstance {
       const COLS = 8;
       const ROWS = 14;
@@ -342,7 +342,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
         cy = 0;
         if (!fits(cur, cx, cy)) {
           rt.sfx.explode();
-          rt.endGame(score, `Top bereikt! Tetris Score: ${score}`);
+          rt.endGame(score, `Topped out! Tetris Score: ${score}`);
         }
       };
       return {
@@ -373,7 +373,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
             if (fits(cur, cx, cy + 1)) cy++;
             else lock();
           }
-          rt.setStatus('Tik L / Midden(Draai) / R · Swipe↓ Drop');
+          rt.setStatus('Tap L / Center(Rotate) / R · Swipe↓ Drop');
         },
         render(r) {
           const c = r.ctx;
@@ -403,8 +403,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '🏓',
     category: 'retro',
     color: '#22d3ee',
-    controlsHint: 'Sleep het onderste batje links/rechts om de neon-bal langs de AI te smashen!',
-    desc: 'Supersnel neon-tafeltennis met buigende spin-ballen.',
+    controlsHint: 'Drag the bottom paddle left/right to smash past the AI!',
+    desc: 'High-speed neon Pong duel.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let ax = W / 2;
@@ -446,7 +446,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
             lives--;
             rt.sfx.hit();
             if (lives <= 0) {
-              rt.endGame(score, `Pong Duel afgelopen! Score: ${score}`);
+              rt.endGame(score, `Pong Duel over! Score: ${score}`);
               return;
             }
             bx = W / 2;
@@ -473,8 +473,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '⛏️',
     category: 'retro',
     color: '#d97706',
-    controlsHint: 'Swipe om ondergrondse tunnels te graven & tik ergens op monsters binnen bereik!',
-    desc: 'Graaf schatten op onder de grond terwijl je achtervolgende monsters vermijdt.',
+    controlsHint: 'Swipe to dig underground tunnels & grab gems!',
+    desc: 'Dig for underground gems while evading chasing monsters.',
     create(rt): MiniGameInstance {
       const dirt = Array.from({ length: 12 }, () => Array(9).fill(1));
       dirt[2][4] = 0;
@@ -514,11 +514,11 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
             } else monster.y += Math.sign(py - monster.y);
             if (monster.x === px && monster.y === py) {
               rt.sfx.explode();
-              rt.endGame(score, `Ondergronds gepakt! Score: ${score}`);
+              rt.endGame(score, `Caught underground! Score: ${score}`);
               return;
             }
           }
-          rt.setStatus('Swipe om te graven & pak 💎!');
+          rt.setStatus('Swipe to dig & grab 💎!');
         },
         render(r) {
           const c = r.ctx;
@@ -542,8 +542,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '✂️',
     category: 'retro',
     color: '#a855f7',
-    controlsHint: 'Tik om een horizontale laser-snede te plaatsen zodra de stuiterende vonken veilig weg zijn!',
-    desc: 'Verklein het speelveld tot 75%+ veroverd is zonder door plasma-vonken geraakt te worden.',
+    controlsHint: 'Tap to slice horizontally when the bouncing spark is clear!',
+    desc: 'Shrink the arena past 75% without touching the spark.',
     create(rt): MiniGameInstance {
       let box = { x: 30, y: 100, w: W - 60, h: 460 };
       let spark = { x: W / 2, y: 300, vx: 175, vy: 195 };
@@ -564,7 +564,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
           if (inp.justPressed && inp.y > box.y + 20 && inp.y < box.y + box.h - 20) {
             if (Math.abs(spark.y - inp.y) < 32) {
               rt.sfx.explode();
-              rt.endGame(score, `Vonk raakte je snijlijn! (${score} pt)`);
+              rt.endGame(score, `Spark hit your slice line! (${score} pt)`);
               return;
             }
             if (spark.y < inp.y) box.h = inp.y - box.y;
@@ -585,7 +585,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
               spark.vy *= 1.15;
             }
           }
-          rt.setStatus('Tik een lijn om veld kleiner te snijden!');
+          rt.setStatus('Tap a line to slice the arena!');
         },
         render(r) {
           const c = r.ctx;
@@ -604,8 +604,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '🏙️',
     category: 'retro',
     color: '#ef4444',
-    controlsHint: 'Tik in de nachthemel om onderscheppingsraketten af te vuren boven je 4 steden!',
-    desc: 'Verdedig jouw verlichte steden tegen regenende kernkoppen.',
+    controlsHint: 'Tap the night sky to intercept missiles above your 4 cities!',
+    desc: 'Defend your 4 cities from incoming missile barrages.',
     create(rt): MiniGameInstance {
       const cities = [65, 160, 260, 355].map((x) => ({ x, alive: true }));
       const missiles: { sx: number; sy: number; x: number; y: number; spd: number }[] = [];
@@ -645,12 +645,12 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
               }
               missiles.splice(i, 1);
               if (cities.every((c) => !c.alive)) {
-                rt.endGame(score, `Alle steden verwoest! Score: ${score}`);
+                rt.endGame(score, `All cities destroyed! Score: ${score}`);
                 return;
               }
             }
           }
-          rt.setStatus(`Steden over: ${cities.filter((c) => c.alive).length}/4`);
+          rt.setStatus(`Cities left: ${cities.filter((c) => c.alive).length}/4`);
         },
         render(r) {
           const c = r.ctx;
@@ -678,8 +678,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '💣',
     category: 'retro',
     color: '#fb923c',
-    controlsHint: 'Swipe om te lopen & tik op scherm om een tijdbom te leggen op kisten/monsters!',
-    desc: 'Klassieke Bomberman-actie: blaas blokken open en schakel spookbots uit.',
+    controlsHint: 'Swipe to move & tap to drop timed bombs on blocks and ghosts!',
+    desc: 'Classic grid bomber: blast crates and clear ghost bots.',
     create(rt): MiniGameInstance {
       const bricks = Array.from({ length: 8 }, () => Array(8).fill(0));
       for (let i = 0; i < 16; i++) bricks[Math.floor(Math.random() * 6) + 2][Math.floor(Math.random() * 8)] = 1;
@@ -756,12 +756,12 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
               }
               if (f.x === px && f.y === py) {
                 rt.sfx.hit();
-                rt.endGame(score, `Monster geraakt! Score: ${score}`);
+                rt.endGame(score, `Hit by a monster! Score: ${score}`);
                 return;
               }
             }
           }
-          rt.setStatus('Swipe=Loop · Tik=Plaats Bom');
+          rt.setStatus('Swipe=Move · Tap=Drop Bomb');
         },
         render(r) {
           const c = r.ctx;
@@ -785,8 +785,8 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
     icon: '🐛',
     category: 'retro',
     color: '#84cc16',
-    controlsHint: 'Sleep het kanon onderaan om de duizendpoot segment voor segment weg te schieten!',
-    desc: 'Arcade-klassieker: elk geraakt segment splitst het wezen in nieuwe paden.',
+    controlsHint: 'Drag the cannon left/right to blast every centipede segment!',
+    desc: 'Arcade classic: blast the descending centipede wave by wave.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let fireT = 0;
@@ -826,7 +826,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
             }
             if (s.y > 540) {
               rt.sfx.explode();
-              rt.endGame(score, `Duizendpoot bereikte onderkant (${score} pt)!`);
+              rt.endGame(score, `Centipede reached the bottom (${score} pt)!`);
               return;
             }
           }
@@ -836,7 +836,7 @@ export const GROUP_09_RETRO: MiniGameDef[] = [
             rt.sfx.win();
             segs = Array.from({ length: 12 }, (_, i) => ({ x: 40 + i * 26, y: 90, dir: 1 }));
           }
-          rt.setStatus(`Segmenten over: ${segs.length}`);
+          rt.setStatus(`Segments left: ${segs.length}`);
         },
         render(r) {
           const c = r.ctx;

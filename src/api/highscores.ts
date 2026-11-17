@@ -56,7 +56,7 @@ export async function submitGlobalArcadeHubScore(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         deviceId: payload.deviceId,
-        playerName: payload.playerName.trim() || 'ArcadeSpeler',
+        playerName: payload.playerName.trim() || 'ArcadePlayer',
         gameId: payload.gameId,
         score: payload.score,
         totalScore: payload.totalScore,

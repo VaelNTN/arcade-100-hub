@@ -67,18 +67,18 @@ root.innerHTML = `
         <div id="hub-avatar" class="hub-logo">👾</div>
         <div>
           <h1 class="hub-title">Arcade 100+ Hub</h1>
-          <div id="hub-summary" class="hub-sub">100 Spellen · Totaal: 0 pt</div>
+          <div id="hub-summary" class="hub-sub">100 Games · Total: 0 pt</div>
         </div>
       </div>
       <div class="icon-actions">
-        <button id="btn-random" class="btn-icon" title="Willekeurig Spel">🎲</button>
-        <button id="btn-hs" class="btn-icon" title="Highscores">🏆</button>
-        <button id="btn-opt" class="btn-icon" title="Profiel & Opties">⚙️</button>
+        <button id="btn-random" class="btn-icon" title="Random">🎲</button>
+        <button id="btn-hs" class="btn-icon" title="Leaderboard">🏆</button>
+        <button id="btn-opt" class="btn-icon" title="Profile">⚙️</button>
       </div>
     </div>
 
     <div class="search-row">
-      <input id="inp-search" class="search-input" type="search" placeholder="🔍 Zoek in 100 spellen (bv. snake, tank, golf, 2048)..." />
+      <input id="inp-search" class="search-input" type="search" placeholder="Search games..." />
     </div>
 
     <div id="cat-strip" class="cat-strip"></div>
@@ -89,7 +89,7 @@ root.innerHTML = `
     <div class="play-top">
       <button id="btn-back-hub" class="btn-small">← Hub</button>
       <div class="play-meta">
-        <div id="play-title" class="play-name">Spel</div>
+        <div id="play-title" class="play-name">Game</div>
         <div id="play-score" class="play-score">0 pt</div>
       </div>
       <div style="display:flex;gap:6px;">
@@ -101,36 +101,37 @@ root.innerHTML = `
     <div class="canvas-stage">
       <canvas id="arcade-canvas" class="arcade-canvas" width="${W}" height="${H}"></canvas>
       <div id="play-gameover" class="gameover-card hidden">
-        <h2 id="go-title" style="margin:0;color:#fde047;">Klaar!</h2>
+        <h2 id="go-title" style="margin:0;color:#fde047;">Game Over</h2>
         <div id="go-summary" style="font-size:0.9rem;color:#cbd5e1;"></div>
         <div id="go-best" style="font-size:0.9rem;font-weight:800;color:#22c55e;"></div>
-        <button id="btn-go-replay" class="btn btn-primary">🔄 Opnieuw Spelen</button>
-        <button id="btn-go-hs" class="btn btn-secondary">🏆 Spel Highscores</button>
-        <button id="btn-go-hub" class="btn btn-secondary">🏠 Terug naar 100 Spellen</button>
+        <button id="btn-go-replay" class="btn btn-primary">🔄 Play Again</button>
+        <button id="btn-go-hs" class="btn btn-secondary">🏆 Leaderboard</button>
+        <button id="btn-go-hub" class="btn btn-secondary">🏠 Back to Hub</button>
       </div>
     </div>
 
     <div class="play-footer">
-      <div id="play-status" class="play-status">Klaar!</div>
+      <div id="play-status" class="play-status">Ready!</div>
       <div id="play-hint"></div>
     </div>
   </section>
 
   <section id="screen-highscores" class="screen hidden">
     <div class="top-nav">
-      <button id="btn-hs-back" class="btn-small">← Terug</button>
-      <h2 class="screen-heading">🏆 Arcade Ranglijst</h2>
+      <button id="btn-hs-back" class="btn-small">← Back</button>
+      <h2 id="hs-heading" class="screen-heading">🏆 Leaderboard</h2>
       <button id="btn-hs-refresh" class="btn-small">↻</button>
     </div>
     <div class="hs-tabs">
-      <button id="tab-global" class="hs-tab active">🌍 Wereldwijd</button>
-      <button id="tab-local" class="hs-tab">📱 Mijn Records</button>
+      <button id="tab-global" class="hs-tab active">🌍 Global</button>
+      <button id="tab-local" class="hs-tab">📱 My Records</button>
     </div>
     <div class="hs-controls">
       <select id="sel-hs-game" class="select-input"></select>
-      <div style="display:flex;gap:8px;">
-        <input id="inp-api-url" class="name-input" type="url" placeholder="https://arcade-highscores.workers.dev" />
-        <button id="btn-save-url" class="btn-small">Opslaan</button>
+      <div id="hs-status-banner" class="hs-status-pill">Offline Mode — Local Highscores</div>
+      <div id="dev-server-row" class="dev-server-row hidden">
+        <input id="inp-api-url" class="name-input" type="url" placeholder="https://api.example.com" />
+        <button id="btn-save-url" class="btn-small">Save</button>
       </div>
     </div>
     <div id="hs-list" class="hs-list"></div>
@@ -138,22 +139,22 @@ root.innerHTML = `
 
   <section id="screen-options" class="screen hidden">
     <div class="top-nav">
-      <button id="btn-opt-back" class="btn-small">← Terug</button>
-      <h2 class="screen-heading">⚙️ Profiel &amp; Opties</h2>
+      <button id="btn-opt-back" class="btn-small">← Back</button>
+      <h2 class="screen-heading">⚙️ Profile</h2>
       <span style="width:52px;"></span>
     </div>
     <div class="options-scroll">
       <div>
-        <label class="section-label">Spelersnaam</label>
-        <input id="inp-player-name" class="name-input" type="text" maxlength="20" placeholder="ArcadeSpeler" />
+        <label class="section-label">Player Name</label>
+        <input id="inp-player-name" class="name-input" type="text" maxlength="20" placeholder="ArcadePlayer" />
       </div>
       <div>
-        <label class="section-label">Kies Avatar</label>
+        <label class="section-label">Choose Avatar</label>
         <div id="avatar-grid" class="avatar-grid"></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);padding:12px 14px;border-radius:14px;border:1px solid var(--border);">
-        <span style="font-weight:800;">🔊 Geluidseffecten</span>
-        <button id="btn-opt-sound" class="btn-small">Aan</button>
+        <span style="font-weight:800;">🔊 Sound Effects</span>
+        <button id="btn-opt-sound" class="btn-small">On</button>
       </div>
     </div>
   </section>
@@ -184,8 +185,8 @@ function renderCategories(): void {
   const strip = document.getElementById('cat-strip');
   if (!strip) return;
   const chips: { id: CategoryId; label: string }[] = [
-    { id: 'all', label: `🎮 Alles (${ALL_GAMES.length})` },
-    { id: 'favorites', label: `⭐ Favorieten (${appState.favorites.length})` },
+    { id: 'all', label: `🎮 All (${ALL_GAMES.length})` },
+    { id: 'favorites', label: `⭐ Favorites (${appState.favorites.length})` },
     ...CATEGORIES.map((c) => ({ id: c.id as CategoryId, label: `${c.icon} ${c.label}` })),
   ];
   strip.innerHTML = chips
@@ -204,7 +205,7 @@ function renderHub(): void {
   if (av) av.textContent = AVATARS[appState.avatarId % AVATARS.length];
   const { totalScore, gamesPlayed } = computeTotalArcadeScore(appState);
   const sum = document.getElementById('hub-summary');
-  if (sum) sum.textContent = `${ALL_GAMES.length} Spellen · ${gamesPlayed} gespeeld · ${totalScore} pt`;
+  if (sum) sum.textContent = `${ALL_GAMES.length} Games · ${gamesPlayed} played · ${totalScore} pt`;
 
   renderCategories();
   const grid = document.getElementById('games-grid');
@@ -225,7 +226,7 @@ function renderHub(): void {
   });
 
   if (filtered.length === 0) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:#94a3b8;">Geen spellen gevonden voor jouw filter.</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:#94a3b8;">No games match your search.</div>`;
     return;
   }
 
@@ -237,12 +238,12 @@ function renderHub(): void {
       <div class="game-card" data-launch="${g.id}" style="border-top:3px solid ${g.color};">
         <div class="card-top">
           <span class="card-num">#${g.num}</span>
-          <button class="fav-btn" data-fav="${g.id}" title="Favoriet">${fav ? '★' : '☆'}</button>
+          <button class="fav-btn" data-fav="${g.id}" title="Favorite">${fav ? '★' : '☆'}</button>
         </div>
         <div class="card-icon">${g.icon}</div>
         <div class="card-title">${g.title}</div>
         <div class="card-desc">${g.desc}</div>
-        <div class="card-best">${best > 0 ? `🏆 Beste: ${best} pt` : '▶ Tik om te spelen'}</div>
+        <div class="card-best">${best > 0 ? `🏆 Best: ${best} pt` : '▶ Tap to play'}</div>
       </div>`;
     })
     .join('');
@@ -269,11 +270,16 @@ function renderHub(): void {
   });
 }
 
+function syncSoundButton(): void {
+  const btn = document.getElementById('btn-play-sound');
+  if (btn) btn.textContent = appState.soundEnabled ? '🔊' : '🔇';
+}
+
 function launchGame(game: MiniGameDef): void {
   stopGameLoop();
   currentGame = game;
   liveScore = 0;
-  liveStatus = 'Speel!';
+  liveStatus = 'Play!';
   gameEnded = false;
   input.down = false;
   input.justPressed = false;
@@ -281,6 +287,7 @@ function launchGame(game: MiniGameDef): void {
   input.swipe = null;
 
   showScreen('play');
+  syncSoundButton();
   document.getElementById('play-gameover')?.classList.add('hidden');
   const titleEl = document.getElementById('play-title');
   const scoreEl = document.getElementById('play-score');
@@ -289,11 +296,16 @@ function launchGame(game: MiniGameDef): void {
   if (titleEl) titleEl.textContent = `${game.icon} ${game.title}`;
   if (scoreEl) scoreEl.textContent = '0 pt';
   if (hintEl) hintEl.textContent = game.controlsHint;
-  if (statusEl) statusEl.textContent = 'Succes!';
+  if (statusEl) statusEl.textContent = 'Good luck!';
 
   const canvas = document.getElementById('arcade-canvas') as HTMLCanvasElement;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const rt: MiniGameRuntime = {
     ctx,
@@ -341,9 +353,9 @@ function launchGame(game: MiniGameDef): void {
       const goTitle = document.getElementById('go-title');
       const goSum = document.getElementById('go-summary');
       const goBest = document.getElementById('go-best');
-      if (goTitle) goTitle.textContent = isNew ? '🎉 Nieuw Record!' : '🏁 Spel Afgelopen';
+      if (goTitle) goTitle.textContent = isNew ? '🎉 New High Score!' : '🏁 Game Over';
       if (goSum) goSum.textContent = summary || `Score: ${cleanScore} pt`;
-      if (goBest) goBest.textContent = `Beste voor ${game.title}: ${appState.bestScores[game.id] || cleanScore} pt`;
+      if (goBest) goBest.textContent = `Best in ${game.title}: ${appState.bestScores[game.id] || cleanScore} pt`;
       document.getElementById('play-gameover')?.classList.remove('hidden');
     },
   };
@@ -361,6 +373,7 @@ function launchGame(game: MiniGameDef): void {
       input.swipe = null;
       input.dx = 0;
       input.dy = 0;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       currentInstance.render(rt);
     }
     rafId = requestAnimationFrame(frame);
@@ -442,7 +455,7 @@ function populateHighscoreSelect(): void {
   const sel = document.getElementById('sel-hs-game') as HTMLSelectElement | null;
   if (!sel) return;
   const opts = [
-    `<option value="overall">🏆 Overall Arcade Ranglijst (Alle 100 spellen)</option>`,
+    `<option value="overall">🏆 Overall Arcade Ranking (All 100 games)</option>`,
     ...ALL_GAMES.map((g) => `<option value="${g.id}">#${g.num} ${g.icon} ${g.title}</option>`),
   ];
   sel.innerHTML = opts.join('');
@@ -453,6 +466,12 @@ async function renderHighscores(): Promise<void> {
   populateHighscoreSelect();
   const urlInp = document.getElementById('inp-api-url') as HTMLInputElement | null;
   if (urlInp) urlInp.value = appState.apiBaseUrl;
+  const statusBanner = document.getElementById('hs-status-banner');
+  if (statusBanner) {
+    statusBanner.textContent = appState.apiBaseUrl
+      ? '🌐 Online Leaderboard'
+      : '📱 Offline Mode — Local Highscores';
+  }
   document.getElementById('tab-global')?.classList.toggle('active', hsTab === 'global');
   document.getElementById('tab-local')?.classList.toggle('active', hsTab === 'local');
 
@@ -464,7 +483,7 @@ async function renderHighscores(): Promise<void> {
       (a, b) => (appState.bestScores[b.id] || 0) - (appState.bestScores[a.id] || 0)
     );
     if (!entries.length) {
-      list.innerHTML = `<div class="hs-row"><span class="hs-meta">Nog geen persoonlijke records. Speel een van de 100 spellen!</span></div>`;
+      list.innerHTML = `<div class="hs-row"><span class="hs-meta">No personal records yet. Play any of the 100 games!</span></div>`;
       return;
     }
     list.innerHTML = entries
@@ -475,7 +494,7 @@ async function renderHighscores(): Promise<void> {
           <span class="hs-rank">#${i + 1}</span>
           <div>
             <div class="hs-name">${g.icon} ${g.title}</div>
-            <div class="hs-meta">${appState.playCounts[g.id] || 1}x gespeeld</div>
+            <div class="hs-meta">Played ${appState.playCounts[g.id] || 1}×</div>
           </div>
         </div>
         <span class="hs-score">${appState.bestScores[g.id]} pt</span>
@@ -486,15 +505,15 @@ async function renderHighscores(): Promise<void> {
   }
 
   if (!appState.apiBaseUrl) {
-    list.innerHTML = `<div class="hs-row"><span class="hs-meta">Vul hierboven een Cloudflare Worker URL in voor globale online highscores.</span></div>`;
+    list.innerHTML = `<div class="hs-row"><span class="hs-meta">Offline Mode — Local Highscores. Switch to My Records to view your best scores.</span></div>`;
     return;
   }
 
-  list.innerHTML = `<div class="hs-row"><span class="hs-meta">Online scores laden...</span></div>`;
+  list.innerHTML = `<div class="hs-row"><span class="hs-meta">Loading online scores...</span></div>`;
   try {
     const res = await fetchGlobalArcadeHubHighscores(appState.apiBaseUrl, hsGameId, appState.deviceId);
     if (!res.entries.length) {
-      list.innerHTML = `<div class="hs-row"><span class="hs-meta">Nog geen online scores voor dit spel — word #1!</span></div>`;
+      list.innerHTML = `<div class="hs-row"><span class="hs-meta">No online scores for this game yet — be #1!</span></div>`;
       return;
     }
     list.innerHTML = res.entries
@@ -506,8 +525,8 @@ async function renderHighscores(): Promise<void> {
           <div class="hs-left">
             <span class="hs-rank">#${e.rank}</span>
             <div>
-              <div class="hs-name">${av} ${e.playerName} ${isMe ? '(Jij)' : ''}</div>
-              <div class="hs-meta">${e.gamesPlayed !== undefined ? `${e.gamesPlayed} spellen` : hsGameId}</div>
+              <div class="hs-name">${av} ${e.playerName} ${isMe ? '(You)' : ''}</div>
+              <div class="hs-meta">${e.gamesPlayed !== undefined ? `${e.gamesPlayed} games` : hsGameId}</div>
             </div>
           </div>
           <span class="hs-score">${e.score} pt</span>
@@ -515,7 +534,8 @@ async function renderHighscores(): Promise<void> {
       })
       .join('');
   } catch {
-    list.innerHTML = `<div class="hs-row"><span class="hs-meta">Kan server niet bereiken. Check je URL of internetverbinding.</span></div>`;
+    if (statusBanner) statusBanner.textContent = '📱 Offline Mode — Local Highscores';
+    list.innerHTML = `<div class="hs-row"><span class="hs-meta">Offline Mode — Local Highscores. Unable to reach online leaderboard.</span></div>`;
   }
 }
 
@@ -536,7 +556,7 @@ function renderOptions(): void {
     });
   }
   const snd = document.getElementById('btn-opt-sound');
-  if (snd) snd.textContent = appState.soundEnabled ? 'Aan' : 'Uit';
+  if (snd) snd.textContent = appState.soundEnabled ? 'On' : 'Off';
 }
 
 async function init(): Promise<void> {
@@ -567,6 +587,20 @@ async function init(): Promise<void> {
   document.getElementById('btn-opt-back')?.addEventListener('click', () => showScreen('hub'));
   document.getElementById('btn-hs-refresh')?.addEventListener('click', () => renderHighscores());
 
+  let hsTapCount = 0;
+  let hsTapTimer: number | null = null;
+  document.getElementById('hs-heading')?.addEventListener('click', () => {
+    hsTapCount++;
+    if (hsTapTimer !== null) window.clearTimeout(hsTapTimer);
+    hsTapTimer = window.setTimeout(() => {
+      hsTapCount = 0;
+    }, 1800);
+    if (hsTapCount >= 5) {
+      hsTapCount = 0;
+      document.getElementById('dev-server-row')?.classList.toggle('hidden');
+    }
+  });
+
   document.getElementById('btn-play-restart')?.addEventListener('click', () => {
     if (currentGame) launchGame(currentGame);
   });
@@ -579,11 +613,11 @@ async function init(): Promise<void> {
     showScreen('highscores');
   });
 
-  document.getElementById('btn-play-sound')?.addEventListener('click', (e) => {
+  document.getElementById('btn-play-sound')?.addEventListener('click', () => {
     appState.soundEnabled = !appState.soundEnabled;
     sfx.enabled = appState.soundEnabled;
     saveArcadeHubState(appState);
-    (e.target as HTMLElement).textContent = appState.soundEnabled ? '🔊' : '🔇';
+    syncSoundButton();
   });
 
   document.getElementById('tab-global')?.addEventListener('click', () => {
@@ -606,7 +640,14 @@ async function init(): Promise<void> {
   });
 
   document.getElementById('inp-player-name')?.addEventListener('input', (e) => {
-    appState.playerName = (e.target as HTMLInputElement).value.trim() || 'ArcadeSpeler';
+    appState.playerName = (e.target as HTMLInputElement).value;
+    saveArcadeHubState(appState);
+  });
+  document.getElementById('inp-player-name')?.addEventListener('blur', (e) => {
+    const el = e.target as HTMLInputElement;
+    const clean = el.value.trim() || 'ArcadePlayer';
+    appState.playerName = clean;
+    el.value = clean;
     saveArcadeHubState(appState);
   });
   document.getElementById('btn-opt-sound')?.addEventListener('click', () => {
@@ -614,6 +655,7 @@ async function init(): Promise<void> {
     sfx.enabled = appState.soundEnabled;
     saveArcadeHubState(appState);
     renderOptions();
+    syncSoundButton();
   });
 }
 

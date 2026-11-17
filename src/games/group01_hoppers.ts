@@ -20,8 +20,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🐿️',
     category: 'hoppers',
     color: '#22c55e',
-    controlsHint: 'Sleep links/rechts om op takken te springen & vallende eikels te ontwijken',
-    desc: 'Eekhoorn springt omhoog van tak naar tak terwijl gouden eikels bonus geven en rotte noten vallen.',
+    controlsHint: 'Drag left/right to hop on branches & dodge rotten acorns',
+    desc: 'Hop upward between branches, grab golden acorns, and dodge hazards.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let py = H - 120;
@@ -81,7 +81,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
             if (Math.hypot(a.x - px, a.y - py) < 24) {
               if (a.bad) {
                 rt.sfx.hit();
-                rt.endGame(score, `Geraakt door rotte eikel op ${score} pt!`);
+                rt.endGame(score, `Hit by a rotten acorn at ${score} pt!`);
                 return;
               } else {
                 score += 40;
@@ -99,9 +99,9 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
           }
           if (py > H + 35) {
             rt.sfx.hit();
-            rt.endGame(score, `Gevallen na ${score} punten!`);
+            rt.endGame(score, `Fell down at ${score} pt!`);
           }
-          rt.setStatus(`Hoogte: ${score}m`);
+          rt.setStatus(`Height: ${score}m`);
         },
         render(r) {
           const c = r.ctx;
@@ -123,8 +123,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🐧',
     category: 'hoppers',
     color: '#38bdf8',
-    controlsHint: 'Houd ingedrukt om snel te duiken op hellingen & vlieg ver over orka-vakken!',
-    desc: 'Glijd over golvende ijsbergen, lanceer hoog door de lucht en land zacht op het volgende ijs.',
+    controlsHint: 'Hold to dive down slopes & launch high over orcas!',
+    desc: 'Slide across icy hills, catch big air, and land smoothly on slopes.',
     create(rt): MiniGameInstance {
       let dist = 0;
       let py = 260;
@@ -161,12 +161,12 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
           const orcaY = groundAt(dist + orcaX) - 14;
           if (Math.abs(orcaX - 95) < 28 && Math.abs(py - orcaY) < 28) {
             rt.sfx.explode();
-            rt.endGame(score, `Orka hapte toe bij ${score}m!`);
+            rt.endGame(score, `Orca snapped you at ${score}m!`);
             return;
           }
           score = Math.floor(dist / 12);
           rt.setScore(score);
-          rt.setStatus(`Snelheid: ${Math.round(speed)} km/u`);
+          rt.setStatus(`Speed: ${Math.round(speed)} km/h`);
         },
         render(r) {
           const c = r.ctx;
@@ -201,8 +201,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🐒',
     category: 'hoppers',
     color: '#16a34a',
-    controlsHint: 'Houd ingedrukt om vast te grijpen aan een liaan, laat los om te vliegen!',
-    desc: 'Zwaai als een oerwoudkoning van liaan naar liaan boven de krokodillenrivier.',
+    controlsHint: 'Hold to grab a vine, release to fly forward!',
+    desc: 'Swing from vine to vine above the jungle river.',
     create(rt): MiniGameInstance {
       let camX = 0;
       let mx = 80;
@@ -268,9 +268,9 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
           }
           if (my > H - 20 || my < -80) {
             rt.sfx.explode();
-            rt.endGame(score, `In het moeras beland na ${score}m!`);
+            rt.endGame(score, `Fell into the swamp at ${score}m!`);
           }
-          rt.setStatus(grabbed ? 'Aan liaan! Laat los op hoogte' : 'Tik & houd vast voor liaan');
+          rt.setStatus(grabbed ? 'Swinging! Release at peak' : 'Tap & hold to grab vine');
         },
         render(r) {
           const c = r.ctx;
@@ -301,8 +301,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🐐',
     category: 'hoppers',
     color: '#a3a3a3',
-    controlsHint: 'Tik LINKS of RECHTS om van bergkam naar bergkam te springen',
-    desc: 'Beklim een steile bergwand in twee banen en ontwijk vallende rotsblokken.',
+    controlsHint: 'Tap LEFT or RIGHT to hop between mountain ridges',
+    desc: 'Climb steep twin ridges and dodge falling boulders.',
     create(rt): MiniGameInstance {
       let lane: 0 | 1 = 0;
       let climb = 0;
@@ -323,7 +323,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
           climb += speed * dt;
           const score = Math.floor(climb / 14);
           rt.setScore(score);
-          rt.setStatus(`Hoogte: ${score}m`);
+          rt.setStatus(`Height: ${score}m`);
           for (const rk of rocks) {
             rk.y += speed * dt;
             if (rk.lane === lane && Math.abs(rk.y - 500) < 34) {
@@ -333,7 +333,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
                 rt.sfx.score();
               } else {
                 rt.sfx.explode();
-                rt.endGame(score, `Geraakt door bergrots op ${score}m!`);
+                rt.endGame(score, `Hit by a boulder at ${score}m!`);
                 return;
               }
             }
@@ -368,8 +368,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🦀',
     category: 'hoppers',
     color: '#fb923c',
-    controlsHint: 'Sleep horizontaal over het zand om parels te vangen & meeuwen te ontwijken',
-    desc: 'Ren zijwaarts over het tropische strand, verzamel glimmende parels en ontwijk aanvallende meeuwen.',
+    controlsHint: 'Drag horizontally across the sand to catch pearls & dodge gulls',
+    desc: 'Scuttle across the beach collecting pearls while dodging seagulls.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let score = 0;
@@ -392,7 +392,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
                 it.y = -50;
                 it.x = rand(30, W - 30);
                 if (lives <= 0) {
-                  rt.endGame(score, `${score} parelpunten verzameld!`);
+                  rt.endGame(score, `Collected ${score} pearl points!`);
                   return;
                 }
               } else {
@@ -408,7 +408,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
               it.x = rand(30, W - 30);
             }
           }
-          rt.setStatus(`Levens: ${lives} · Parels: ${score}`);
+          rt.setStatus(`Lives: ${lives} · Pearls: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -428,8 +428,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🦎',
     category: 'hoppers',
     color: '#84cc16',
-    controlsHint: 'Tik rechtstreeks op vliegen & kevers om je tong af te vuren! Vermijd wespen.',
-    desc: 'Supersnelle tong-reflex: tik zo veel mogelijk insecten binnen de tijdslimiet.',
+    controlsHint: 'Tap directly on flies to snap your tongue! Avoid wasps.',
+    desc: 'Fast tongue reflexes: catch as many bugs as possible in 35s.',
     create(rt): MiniGameInstance {
       let score = 0;
       let timer = 35;
@@ -446,7 +446,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
           timer -= dt;
           if (timer <= 0) {
             rt.sfx.win();
-            rt.endGame(score, `Eindscore: ${score} punten in 35s!`);
+            rt.endGame(score, `Final score: ${score} pt in 35s!`);
             return;
           }
           if (tongueTo) {
@@ -479,7 +479,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
             if (!hitAny) rt.sfx.tap();
             rt.setScore(score);
           }
-          rt.setStatus(`Tijd: ${Math.ceil(timer)}s · Niet op 🐝 tikken!`);
+          rt.setStatus(`Time: ${Math.ceil(timer)}s · Don't tap 🐝!`);
         },
         render(r) {
           const c = r.ctx;
@@ -506,8 +506,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🐹',
     category: 'hoppers',
     color: '#f59e0b',
-    controlsHint: 'Tik telkens als de wijzer in het GROENE vak komt voor turbo-energie!',
-    desc: 'Ritme-hardlopen in een rad: perfecte taps bouwen megasnelheid op zonder te vallen.',
+    controlsHint: 'Tap whenever the marker enters the GREEN zone for turbo power!',
+    desc: 'Rhythm wheel running: perfect taps build speed without wiping out.',
     create(rt): MiniGameInstance {
       let ang = 0;
       let speed = 2.4;
@@ -531,12 +531,12 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
               speed = Math.max(2.0, speed - 0.8);
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Uit het rad geslingerd bij ${score}W!`);
+                rt.endGame(score, `Flung off the wheel at ${score}W!`);
                 return;
               }
             }
           }
-          rt.setStatus(`Energie: ${score} Watt`);
+          rt.setStatus(`Power: ${score} Watts`);
         },
         render(r) {
           const c = r.ctx;
@@ -572,8 +572,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🦉',
     category: 'hoppers',
     color: '#6366f1',
-    controlsHint: 'Houd ingedrukt om op nachtelijke thermiek te stijgen, laat los om te zweven',
-    desc: 'Zweef stil door het donkere bos tussen holle boomstammen en vang gloeiwormen.',
+    controlsHint: 'Hold to climb on night thermals, release to glide',
+    desc: 'Glide silently through the moonlit forest between hollow trunks.',
     create(rt): MiniGameInstance {
       let py = 300;
       let vy = 0;
@@ -598,7 +598,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
             }
             if (Math.abs(g.x - 95) < 34 && (py < g.gapY - 72 || py > g.gapY + 72)) {
               rt.sfx.hit();
-              rt.endGame(score, `Tegen een boom gevlogen (${score} pt)!`);
+              rt.endGame(score, `Crashed into a tree (${score} pt)!`);
               return;
             }
             if (g.x < -50) {
@@ -609,9 +609,9 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
           }
           if (py < 15 || py > H - 15) {
             rt.sfx.hit();
-            rt.endGame(score, `Uit koers geraakt (${score} pt)!`);
+            rt.endGame(score, `Veered off course (${score} pt)!`);
           }
-          rt.setStatus(`Vliegscore: ${score}`);
+          rt.setStatus(`Flight Score: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -633,8 +633,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🦘',
     category: 'hoppers',
     color: '#d97706',
-    controlsHint: 'Houd ingedrukt op de grond om sprongkracht op te laden & laat los over ravijnen',
-    desc: 'Laad reuzensprongen op in de Australische outback en land precies op de rode rotsplateaus.',
+    controlsHint: 'Hold on the ground to charge jump power & release over canyons',
+    desc: 'Charge huge leaps across the outback and land on rock plateaus.',
     create(rt): MiniGameInstance {
       let charge = 0;
       let jumping = false;
@@ -673,7 +673,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
                 rt.sfx.score();
               } else if (ky > H + 30) {
                 rt.sfx.explode();
-                rt.endGame(score, `In het outback-ravijn gevallen (${score} pt)!`);
+                rt.endGame(score, `Fell into the canyon (${score} pt)!`);
                 return;
               }
             }
@@ -683,7 +683,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
             const last = pads[pads.length - 1];
             pads.push({ x: last.x + rand(155, 250), w: rand(75, 115) });
           }
-          rt.setStatus(jumping ? 'Zweven!' : 'Houd vast & laat los');
+          rt.setStatus(jumping ? 'Soaring!' : 'Hold & release to jump');
         },
         render(r) {
           const c = r.ctx;
@@ -704,8 +704,8 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
     icon: '🦆',
     category: 'hoppers',
     color: '#06b6d4',
-    controlsHint: 'Tik omhoog / omlaag over de 3 waterstromen en pak broodkruimels!',
-    desc: 'Surf op snelle bootgolven, verzamel verloren eendjes en ontwijk drijvende boomstammen.',
+    controlsHint: 'Tap top, middle, or bottom lane to grab bread & dodge logs!',
+    desc: 'Surf across 3 pond lanes, snag crumbs, and dodge drifting logs.',
     create(rt): MiniGameInstance {
       let lane = 1;
       let score = 0;
@@ -733,7 +733,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
                 lives--;
                 rt.sfx.hit();
                 if (lives <= 0) {
-                  rt.endGame(score, `${score} punten op de golven!`);
+                  rt.endGame(score, `Scored ${score} points on the waves!`);
                   return;
                 }
               }
@@ -745,7 +745,7 @@ export const GROUP_01_HOPPERS: MiniGameDef[] = [
               o.lane = Math.floor(Math.random() * 3);
             }
           }
-          rt.setStatus(`Golfscore: ${score}`);
+          rt.setStatus(`Wave Score: ${score}`);
         },
         render(r) {
           const c = r.ctx;

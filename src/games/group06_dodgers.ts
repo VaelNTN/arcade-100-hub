@@ -17,8 +17,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '🚨',
     category: 'runners',
     color: '#ef4444',
-    controlsHint: 'Houd ingedrukt om naar voren te sluipen — laat los achter dekking voor lasers!',
-    desc: 'Sluip door een streng beveiligd museum vol aan- en uitknipperende beveiligingslasers.',
+    controlsHint: 'Hold to sneak forward — release behind cover before lasers fire!',
+    desc: 'Sneak past blinking security lasers to steal the museum diamond.',
     create(rt): MiniGameInstance {
       let py = 540;
       let t = 0;
@@ -32,7 +32,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             const on = Math.sin(((t + l.offset) / l.period) * Math.PI * 2) > 0;
             if (on && Math.abs(py - l.y) < 16) {
               rt.sfx.explode();
-              rt.endGame(score, `Alarm afgegaan! Score: ${score}`);
+              rt.endGame(score, `Alarm triggered! Score: ${score}`);
               return;
             }
           }
@@ -42,7 +42,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             rt.setScore(score);
             rt.sfx.win();
           }
-          rt.setStatus(`Kluizen leeggeroofd: ${score / 100}`);
+          rt.setStatus(`Vaults looted: ${score / 100}`);
         },
         render(r) {
           const c = r.ctx;
@@ -69,8 +69,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '🚦',
     category: 'runners',
     color: '#22c55e',
-    controlsHint: 'Tik om het verkeerslicht op het kruispunt om te zetten en botsingen te voorkomen!',
-    desc: 'Regel twee drukke wegen tegelijk: laat auto’s doorstromen zonder één ongeluk.',
+    controlsHint: 'Tap to flip traffic lights and prevent intersection crashes!',
+    desc: 'Manage two busy roads at once without causing a crash.',
     create(rt): MiniGameInstance {
       let nsGreen = true;
       let score = 0;
@@ -107,10 +107,10 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
           const inBoxEW = cars.some((cCar) => cCar.axis === 'ew' && Math.abs(cCar.pos - W / 2) < 30);
           if (inBoxNS && inBoxEW && stopLine > 0) {
             rt.sfx.explode();
-            rt.endGame(score, `Kruispunt botsing bij ${score} pt!`);
+            rt.endGame(score, `Intersection crash at ${score} pt!`);
             return;
           }
-          rt.setStatus(nsGreen ? '↕️ Noord-Zuid GROEN' : '↔️ Oost-West GROEN');
+          rt.setStatus(nsGreen ? '↕️ North-South GREEN' : '↔️ East-West GREEN');
         },
         render(r) {
           const c = r.ctx;
@@ -135,8 +135,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '🌠',
     category: 'runners',
     color: '#f97316',
-    controlsHint: 'Sleep naar links en rechts om gloeiende meteoren & schokgolven te ontwijken!',
-    desc: 'Overleef een steeds heftigere meteorenregen en pak energieschilden op.',
+    controlsHint: 'Drag left and right to dodge blazing meteors!',
+    desc: 'Survive an intensifying meteor storm on the alien surface.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let score = 0;
@@ -157,12 +157,12 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             m.y += m.spd * dt;
             if (Math.hypot(m.x - px, m.y - 545) < m.r + 14) {
               rt.sfx.explode();
-              rt.endGame(score, `Verpletterd door meteoor (${score} pt)!`);
+              rt.endGame(score, `Crushed by a meteor (${score} pt)!`);
               return;
             }
             if (m.y > H + 40) meteors.splice(i, 1);
           }
-          rt.setStatus(`Overleefd: ${score}`);
+          rt.setStatus(`Survived: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -182,8 +182,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '🧳',
     category: 'runners',
     color: '#6366f1',
-    controlsHint: 'Tik op één van de 3 roltrappen en sprint vooruit langs vallende koffers!',
-    desc: 'Ren tegen een versnellende luchthaven-roltrap op vol rollende bagage.',
+    controlsHint: 'Tap any of the 3 escalator lanes to dodge tumbling luggage!',
+    desc: 'Sprint up a speeding airport escalator past falling bags.',
     create(rt): MiniGameInstance {
       let lane = 1;
       let score = 0;
@@ -201,7 +201,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             b.y += (b.spd + score * 0.25) * dt;
             if (b.lane === lane && Math.abs(b.y - 520) < 32) {
               rt.sfx.hit();
-              rt.endGame(score, `Gestruikeld over een koffer (${score} pt)!`);
+              rt.endGame(score, `Tripped over luggage (${score} pt)!`);
               return;
             }
             if (b.y > H + 30) {
@@ -209,7 +209,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
               b.lane = Math.floor(Math.random() * 3);
             }
           }
-          rt.setStatus(`Roltrap-sprint: ${score}m`);
+          rt.setStatus(`Escalator sprint: ${score}m`);
         },
         render(r) {
           const c = r.ctx;
@@ -228,8 +228,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '🚗',
     category: 'physics',
     color: '#38bdf8',
-    controlsHint: 'Sleep terug op je botsauto om rivalen van het krimpende ijsplatform te rammen!',
-    desc: 'Slingshot-arenagevecht op glad ijs: wie als laatste blijft staan wint.',
+    controlsHint: 'Drag back to sling your bumper car and knock rivals off the ice!',
+    desc: 'Slingshot ice-arena battle: knock rivals off as the rink shrinks.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let py = 380;
@@ -286,10 +286,10 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
           }
           if (Math.hypot(px - W / 2, py - 330) > radius + 10) {
             rt.sfx.explode();
-            rt.endGame(score, `Van het ijs gegleden! Score: ${score}`);
+            rt.endGame(score, `Slid off the ice! Score: ${score}`);
             return;
           }
-          rt.setStatus(`Sleep & lanceer · Score: ${score}`);
+          rt.setStatus(`Drag & launch · Score: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -308,8 +308,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '🚆',
     category: 'runners',
     color: '#eab308',
-    controlsHint: 'Tik op de wissel om het spoor naar LINKS (Rood) of RECHTS (Blauw) te schakelen!',
-    desc: 'Leid gekleurde treinen veilig naar het bijpassende perron zonder botsingen.',
+    controlsHint: 'Tap to switch tracks LEFT (Red) or RIGHT (Blue) for incoming trains!',
+    desc: 'Route colored trains safely to their matching station.',
     create(rt): MiniGameInstance {
       let switchRight = false;
       let score = 0;
@@ -339,13 +339,13 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
                 lives--;
                 rt.sfx.hit();
                 if (lives <= 0) {
-                  rt.endGame(score, `Verkeerd spoor! Score: ${score}`);
+                  rt.endGame(score, `Wrong track! Score: ${score}`);
                   return;
                 }
               }
             }
           }
-          rt.setStatus(`Wissel staat op: ${switchRight ? 'RECHTS 🔵' : 'LINKS 🔴'}`);
+          rt.setStatus(`Switch: ${switchRight ? 'RIGHT 🔵' : 'LEFT 🔴'}`);
         },
         render(r) {
           const c = r.ctx;
@@ -385,8 +385,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '⛷️',
     category: 'runners',
     color: '#bae6fd',
-    controlsHint: 'Sleep de skiër snel om dennenbomen heen en blijf voor de lawine uit!',
-    desc: 'Slalom naar beneden door poedersneeuw terwijl achter je een lawine dreigt.',
+    controlsHint: 'Drag the skier around pine trees and outrun the avalanche!',
+    desc: 'Slalom down powdery slopes while an avalanche chases behind.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let score = 0;
@@ -401,7 +401,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             tr.y -= spd * dt;
             if (Math.hypot(tr.x - px, tr.y - 220) < 26) {
               rt.sfx.explode();
-              rt.endGame(score, `Tegen een dennenboom gebotst (${score} pt)!`);
+              rt.endGame(score, `Hit a pine tree (${score} pt)!`);
               return;
             }
             if (tr.y < -30) {
@@ -409,13 +409,13 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
               tr.x = rand(30, W - 30);
             }
           }
-          rt.setStatus(`Afdaling: ${score}m`);
+          rt.setStatus(`Descent: ${score}m`);
         },
         render(r) {
           const c = r.ctx;
           drawGradientBg(c, '#f8fafc', '#bae6fd');
           drawRoundedBox(c, 0, 0, W, 90, 0, '#e2e8f0');
-          drawBadgeText(c, '❄️ LAWINE ❄️', W / 2, 55, '#0369a1', 18);
+          drawBadgeText(c, '❄️ AVALANCHE ❄️', W / 2, 55, '#0369a1', 18);
           drawBadgeText(c, '⛷️', px, 220, '#fff', 34);
           for (const tr of trees) drawBadgeText(c, '🌲', tr.x, tr.y, '#fff', 34);
         },
@@ -429,8 +429,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '⚪',
     category: 'physics',
     color: '#f43f5e',
-    controlsHint: 'Sleep terug om een ketting ballen te richten op de genummerde blokken!',
-    desc: 'Verslavende blokkenbreker: verzamel extra ballen om rijen van 10+ stenen weg te knallen.',
+    controlsHint: 'Drag to aim a chain of balls at the numbered blocks!',
+    desc: 'Brick-breaking chain shots: collect extra balls to clear rows.',
     create(rt): MiniGameInstance {
       let shootX = W / 2;
       let ballCount = 5;
@@ -444,7 +444,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
         for (const b of blocks) b.y += 52;
         if (blocks.some((b) => b.y > 515)) {
           rt.sfx.explode();
-          rt.endGame(score, `Blokken bereikten de bodem! Score: ${score}`);
+          rt.endGame(score, `Blocks reached the bottom! Score: ${score}`);
           return;
         }
         const lvl = Math.max(2, Math.floor(score / 40) + 2);
@@ -504,7 +504,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
               if (activeBalls.length === 0 && queue === 0) addRow();
             }
           }
-          rt.setStatus(`Ballen: ${ballCount} · Mik omhoog!`);
+          rt.setStatus(`Balls: ${ballCount} · Aim upward!`);
         },
         render(r) {
           const c = r.ctx;
@@ -535,8 +535,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '🛸',
     category: 'physics',
     color: '#a855f7',
-    controlsHint: 'Tik LINKS voor linker flipper, RECHTS voor rechter flipper!',
-    desc: 'Flipperkast vol verlichte bumpers, bonus-targets en turbo-stuiters.',
+    controlsHint: 'Tap LEFT for left flipper, RIGHT for right flipper!',
+    desc: 'Arcade pinball packed with glowing bumpers and fast rebounds.',
     create(rt): MiniGameInstance {
       let bx = 180;
       let by = 140;
@@ -596,7 +596,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             balls--;
             rt.sfx.hit();
             if (balls <= 0) {
-              rt.endGame(score, `Pinball eindscore: ${score}`);
+              rt.endGame(score, `Pinball final score: ${score}`);
               return;
             }
             bx = rand(140, 280);
@@ -604,7 +604,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             vx = rand(-150, 150);
             vy = 60;
           }
-          rt.setStatus(`Ballen over: ${balls}`);
+          rt.setStatus(`Balls left: ${balls}`);
         },
         render(r) {
           const c = r.ctx;
@@ -632,8 +632,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     icon: '⛳',
     category: 'physics',
     color: '#22c55e',
-    controlsHint: 'Sleep vanaf de golfbal en laat los om hem richting de vlag te putten!',
-    desc: 'Stuitere langs houten balken en sink de bal in zo min mogelijk slagen.',
+    controlsHint: 'Drag from the golf ball and release to putt toward the flag!',
+    desc: 'Bank off wooden barriers and sink the putt.',
     create(rt): MiniGameInstance {
       let bx = W / 2;
       let by = 520;

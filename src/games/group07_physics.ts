@@ -17,8 +17,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '🧱',
     category: 'physics',
     color: '#38bdf8',
-    controlsHint: 'Sleep het neon-batje links en rechts om alle stenen stuk te slaan!',
-    desc: 'Klassieke arcade-stenenbreker met oplopende balsnelheid.',
+    controlsHint: 'Drag the neon paddle left and right to smash every brick!',
+    desc: 'Classic brick breaker with escalating ball speed.',
     create(rt): MiniGameInstance {
       let padX = W / 2;
       let bx = W / 2;
@@ -75,7 +75,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
             lives--;
             rt.sfx.hit();
             if (lives <= 0) {
-              rt.endGame(score, `Breakout eindscore: ${score}`);
+              rt.endGame(score, `Breakout final score: ${score}`);
               return;
             }
             bx = padX;
@@ -83,7 +83,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
             vx = 180;
             vy = -290;
           }
-          rt.setStatus(`Stenen over: ${bricks.length}`);
+          rt.setStatus(`Bricks left: ${bricks.length}`);
         },
         render(r) {
           const c = r.ctx;
@@ -103,8 +103,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '🎱',
     category: 'physics',
     color: '#15803d',
-    controlsHint: 'Sleep terug op de witte bal om alle rode ballen in de hoeken te stoten!',
-    desc: 'Biljart-puzzel met banden en snelle kettingstoten.',
+    controlsHint: 'Drag back from the cue ball to sink all red balls!',
+    desc: 'Pocket billiards puzzle with bank shots and combos.',
     create(rt): MiniGameInstance {
       let wx = W / 2;
       let wy = 480;
@@ -130,7 +130,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
           const moving = Math.hypot(wvx, wvy) > 8 || balls.some((b) => Math.hypot(b.vx, b.vy) > 8);
           if (!moving) {
             if (shots <= 0) {
-              rt.endGame(score, `Keustoten op! Score: ${score}`);
+              rt.endGame(score, `Out of shots! Score: ${score}`);
               return;
             }
             if (inp.down) {
@@ -195,7 +195,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               { x: rand(90, 330), y: rand(140, 320), vx: 0, vy: 0 },
             ];
           }
-          rt.setStatus(`Stootjes over: ${shots}`);
+          rt.setStatus(`Shots left: ${shots}`);
         },
         render(r) {
           const c = r.ctx;
@@ -223,8 +223,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '🟡',
     category: 'physics',
     color: '#facc15',
-    controlsHint: 'Tik bovenin om gratis gouden ballen door pinnen naar multiplier-vakken te droppen!',
-    desc: '100% gratis Plinko zonder echt geld: kies de slimste droplijn voor 10x jackpots.',
+    controlsHint: 'Tap near the top to drop golden balls through the pegs!',
+    desc: 'Free arcade Plinko: pick the best drop lane for 100-pt slots.',
     create(rt): MiniGameInstance {
       const pegs: { x: number; y: number }[] = [];
       for (let r = 0; r < 7; r++) {
@@ -276,10 +276,10 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
           }
           if (ammo <= 0 && balls.length === 0) {
             rt.sfx.win();
-            rt.endGame(score, `15 gratis Plinko-ballen leverden ${score} pt op!`);
+            rt.endGame(score, `15 Plinko balls scored ${score} pt!`);
             return;
           }
-          rt.setStatus(`Ballen over: ${ammo} · Gratis drop!`);
+          rt.setStatus(`Balls left: ${ammo} · Tap top to drop!`);
         },
         render(r) {
           const c = r.ctx;
@@ -302,8 +302,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '🤸',
     category: 'physics',
     color: '#ef4444',
-    controlsHint: 'Sleep terug om hoek & kracht te kiezen & vuur de stuntman door de gouden ring!',
-    desc: 'Lanceer de stuntman in één perfecte boog naar het doelmatras.',
+    controlsHint: 'Aim and release to launch the stuntman through the golden ring!',
+    desc: 'Launch the stuntman in one clean arc onto the crash mat.',
     create(rt): MiniGameInstance {
       let drag = false;
       let aim = { x: 140, y: 400 };
@@ -351,12 +351,12 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Stuntshows afgerond: ${score} pt!`);
+                rt.endGame(score, `Stunt show complete: ${score} pt!`);
                 return;
               }
             }
           }
-          rt.setStatus(`Stuntlevens: ${lives}`);
+          rt.setStatus(`Stunt lives: ${lives}`);
         },
         render(r) {
           const c = r.ctx;
@@ -386,8 +386,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '⚖️',
     category: 'physics',
     color: '#22d3ee',
-    controlsHint: 'Tik LINKS of RECHTS om de weegschaal te kantelen zodat de bal niet valt!',
-    desc: 'Houd een gladde stalen bal in evenwicht terwijl vallende blokjes je plank duwen.',
+    controlsHint: 'Hold LEFT or RIGHT to tilt the beam and balance the ball!',
+    desc: 'Keep the steel ball balanced against shifting gusts.',
     create(rt): MiniGameInstance {
       let tilt = 0;
       let ballPos = 0; // -1..1
@@ -406,10 +406,10 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
           rt.setScore(score);
           if (Math.abs(ballPos) > 1.02) {
             rt.sfx.hit();
-            rt.endGame(score, `Balans verloren na ${score} pt!`);
+            rt.endGame(score, `Lost balance at ${score} pt!`);
             return;
           }
-          rt.setStatus(`Balans: ${score}`);
+          rt.setStatus(`Balance: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -434,8 +434,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '🫧',
     category: 'physics',
     color: '#ec4899',
-    controlsHint: 'Tik naar boven om gekleurde bubbels op bijpassende rijen te knallen!',
-    desc: 'Knallen met kettingreacties: raak gelijke kleuren en houd de top vrij.',
+    controlsHint: 'Tap upward to shoot colored bubbles at matching clusters!',
+    desc: 'Pop matching bubbles in chain reactions before they drop.',
     create(rt): MiniGameInstance {
       const cols = ['#ef4444', '#38bdf8', '#22c55e', '#facc15'];
       const bubbles: { x: number; y: number; ci: number }[] = [];
@@ -479,17 +479,17 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               }
               if (bubbles.length === 0) {
                 rt.sfx.win();
-                rt.endGame(score + 200, `Bord leeggespeeld! Score: ${score + 200}`);
+                rt.endGame(score + 200, `Board cleared! Score: ${score + 200}`);
                 return;
               }
               if (bubbles.some((b) => b.y > 500)) {
                 rt.sfx.hit();
-                rt.endGame(score, `Bubbels te laag! Score: ${score}`);
+                rt.endGame(score, `Bubbles too low! Score: ${score}`);
                 return;
               }
             }
           }
-          rt.setStatus(`Bubbels over: ${bubbles.length}`);
+          rt.setStatus(`Bubbles left: ${bubbles.length}`);
         },
         render(r) {
           const c = r.ctx;
@@ -508,8 +508,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '🧲',
     category: 'physics',
     color: '#ef4444',
-    controlsHint: 'Houd ergens ingedrukt om een krachtige magneet te plaatsen die de stalen kogel aantrekt!',
-    desc: 'Stuur een rollende stalen knikker langs draaiende zagen naar het portaal.',
+    controlsHint: 'Hold anywhere to pull the steel ball toward your magnet!',
+    desc: 'Guide the steel ball past spinning sawblades into the portal.',
     create(rt): MiniGameInstance {
       let bx = 70;
       let by = 520;
@@ -540,7 +540,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
           for (const s of saws) {
             if (Math.hypot(bx - s.x, by - s.y) < s.r + 14) {
               rt.sfx.explode();
-              rt.endGame(score, `Zaagblad geraakt op ${score} pt!`);
+              rt.endGame(score, `Hit a sawblade at ${score} pt!`);
               return;
             }
           }
@@ -558,7 +558,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               { x: rand(120, 300), y: rand(180, 340), r: 24 },
             ];
           }
-          rt.setStatus('Houd vinger op scherm = magneet');
+          rt.setStatus('Hold screen = magnet pull');
         },
         render(r) {
           const c = r.ctx;
@@ -581,8 +581,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '🔢',
     category: 'puzzles',
     color: '#f59e0b',
-    controlsHint: 'Swipe omhoog/omlaag/links/rechts om tegels samen te voegen tot 2048+!',
-    desc: 'De klassieke getallenpuzzel in turbostand — schuif en combineer tot de hoogste tegels.',
+    controlsHint: 'Swipe up/down/left/right to merge matching tiles toward 2048!',
+    desc: 'Classic sliding number puzzle — merge tiles to climb higher.',
     create(rt): MiniGameInstance {
       const grid = Array(16).fill(0);
       let score = 0;
@@ -631,7 +631,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
       return {
         update(_dt, inp) {
           if (inp.swipe) move(inp.swipe);
-          rt.setStatus('Swipe een richting op het bord');
+          rt.setStatus('Swipe any direction on the board');
         },
         onKey(k) {
           if (k === 'ArrowUp') move('up');
@@ -664,8 +664,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '🟨',
     category: 'puzzles',
     color: '#38bdf8',
-    controlsHint: 'Tik op een van de 3 blokken onderaan en tik daarna op het 6x6 bord om rijen te wissen!',
-    desc: 'Slimme blokjes-puzzel: vul rijen en kolommen volledig om mega-combo’s te scoren.',
+    controlsHint: 'Pick a piece below, then tap the 6x6 board to clear rows & columns!',
+    desc: 'Clever block puzzle: fill full rows or columns for big combos.',
     create(rt): MiniGameInstance {
       const board = Array(36).fill(0);
       const shapes = [
@@ -715,7 +715,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               } else rt.sfx.hit();
             }
           }
-          rt.setStatus(`Kies stuk #${sel + 1} · Tik op bord`);
+          rt.setStatus(`Piece #${sel + 1} selected · Tap board`);
         },
         render(r) {
           const c = r.ctx;
@@ -742,8 +742,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     icon: '🧪',
     category: 'puzzles',
     color: '#2dd4bf',
-    controlsHint: 'Tik op een reageerbuis om te gieten, en tik op een andere buis om te sorteren!',
-    desc: 'Sorteer alle gekleurde vloeistoffen zodat elke reageerbuis 1 pure kleur bevat.',
+    controlsHint: 'Tap a tube to pick up, then tap another tube to pour!',
+    desc: 'Sort colored liquids until each tube holds one pure color.',
     create(rt): MiniGameInstance {
       const palette = ['#ef4444', '#38bdf8', '#facc15'];
       let tubes: number[][] = [];
@@ -782,7 +782,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               selected = null;
             }
           }
-          rt.setStatus(selected !== null ? `Buis ${selected + 1} gekozen → tik doel` : 'Tik een buis om te gieten');
+          rt.setStatus(selected !== null ? `Tube ${selected + 1} selected → tap target` : 'Tap a tube to pour');
         },
         render(r) {
           const c = r.ctx;

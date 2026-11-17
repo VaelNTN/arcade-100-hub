@@ -17,8 +17,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '🏜️',
     category: 'timing',
     color: '#f59e0b',
-    controlsHint: 'Houd ingedrukt om hard in de duinvallei te duiken & laat los voor turbo-vluchten!',
-    desc: 'Zweef hoog over de rode woestijn-horizon: land vloeiend op een dalende helling.',
+    controlsHint: 'Hold to dive into valleys & release to soar over dunes!',
+    desc: 'Soar across desert dunes and land smoothly on downslopes.',
     create(rt): MiniGameInstance {
       let dist = 0;
       let py = 360;
@@ -42,7 +42,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               rt.sfx.score();
             } else if (vy > 510 && slope > 4) {
               rt.sfx.explode();
-              rt.endGame(score, `Hard op heuvel geland bij ${score} pt!`);
+              rt.endGame(score, `Crashed into a dune at ${score} pt!`);
               return;
             }
             py = gy;
@@ -53,7 +53,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               rt.setScore(score);
             }
           }
-          rt.setStatus(`Hoog over de lijn = bonus!`);
+          rt.setStatus(`Fly above the line for bonus!`);
         },
         render(r) {
           const c = r.ctx;
@@ -84,8 +84,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '🔐',
     category: 'timing',
     color: '#22c55e',
-    controlsHint: 'Tik exact wanneer de draaiende wijzer het GOUDEN slotpunt raakt!',
-    desc: 'Kraak steeds snellere kluizen zonder één misser.',
+    controlsHint: 'Tap right when the spinning dial hits the GOLDEN pin!',
+    desc: 'Crack faster vault locks without a single miss.',
     create(rt): MiniGameInstance {
       let ang = 0;
       let dir = 1;
@@ -114,11 +114,11 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               }
             } else {
               rt.sfx.hit();
-              rt.endGame(score, `Kluis geblokkeerd op niveau ${level} (${score} pt)!`);
+              rt.endGame(score, `Lock jammed at level ${level} (${score} pt)!`);
               return;
             }
           }
-          rt.setStatus(`Kluis ${level} · Nog ${left}x`);
+          rt.setStatus(`Vault ${level} · ${left} left`);
         },
         render(r) {
           const c = r.ctx;
@@ -149,8 +149,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '✂️',
     category: 'timing',
     color: '#ec4899',
-    controlsHint: 'Tik om het slingerende touw door te knippen zodat de snoepbal in de bewegende bak valt!',
-    desc: 'Timing + zwaartekracht: knip precies op het juiste punt van de slingerbeweging.',
+    controlsHint: 'Tap to cut the rope so the candy drops into the moving bucket!',
+    desc: 'Timing & gravity: snip the pendulum at the perfect moment.',
     create(rt): MiniGameInstance {
       let t = 0;
       let bx = W / 2;
@@ -196,13 +196,13 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Op! Score: ${score}`);
+                rt.endGame(score, `Out of lives! Score: ${score}`);
                 return;
               }
               reset();
             }
           }
-          rt.setStatus(`Knip op tijd! Score: ${score}`);
+          rt.setStatus(`Cut in time! Score: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -230,8 +230,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '🪐',
     category: 'timing',
     color: '#6366f1',
-    controlsHint: 'Tik om je uit de baan van deze planeet te lanceren naar de volgende planeet!',
-    desc: 'Zwaartekracht-sprongen tussen draaiende planeten in de diepe ruimte.',
+    controlsHint: 'Tap to launch from orbit onto the next planet!',
+    desc: 'Gravity-hop between orbiting planets across deep space.',
     create(rt): MiniGameInstance {
       const planets = [
         { x: W / 2, y: 470, r: 46 },
@@ -278,11 +278,11 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
             }
             if (px < -30 || px > W + 30 || py < -40 || py > H + 40) {
               rt.sfx.hit();
-              rt.endGame(score, `Verdwaald in het heelal (${score} pt)!`);
+              rt.endGame(score, `Lost in deep space (${score} pt)!`);
               return;
             }
           }
-          rt.setStatus(`Planeten bezocht: ${score / 30}`);
+          rt.setStatus(`Planets visited: ${score / 30}`);
         },
         render(r) {
           const c = r.ctx;
@@ -302,8 +302,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '🎵',
     category: 'timing',
     color: '#d946ef',
-    controlsHint: 'Tik op de 4 neon-banen zodra muziektegels de witte lijn raken!',
-    desc: 'Ritme-actie op 4 banen: bouw streak-multipliers op zonder noten te missen.',
+    controlsHint: 'Tap the 4 neon lanes when tiles hit the white bar!',
+    desc: '4-lane rhythm action: hit notes on the beat without missing.',
     create(rt): MiniGameInstance {
       const notes: { lane: number; y: number }[] = [];
       let spawnT = 0.4;
@@ -337,12 +337,12 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Ritme gemist! Score: ${score}`);
+                rt.endGame(score, `Missed the beat! Score: ${score}`);
                 return;
               }
             }
           }
-          rt.setStatus(`Levens: ${lives} · Tik onderaan op ritme`);
+          rt.setStatus(`Lives: ${lives} · Tap on the beat`);
         },
         render(r) {
           const c = r.ctx;
@@ -369,8 +369,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '🔓',
     category: 'timing',
     color: '#64748b',
-    controlsHint: 'Sleep rond de draaiknop om het targetgetal bovenin te zetten, laat even los om te klikken!',
-    desc: 'Kraak de geheime 3-cijferige bankkluis voordat de alarmtimer afloopt!',
+    controlsHint: 'Drag around the dial to lock onto the target number!',
+    desc: 'Crack the vault combination before the alarm timer runs out.',
     create(rt): MiniGameInstance {
       let dial = 0;
       let target = Math.floor(Math.random() * 12);
@@ -382,7 +382,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           timeLeft -= dt;
           if (timeLeft <= 0) {
             rt.sfx.explode();
-            rt.endGame(score, `Tijd om! Kluizen gekraakt: ${Math.floor(score / 40)}`);
+            rt.endGame(score, `Time's up! Vaults cracked: ${Math.floor(score / 40)}`);
             return;
           }
           if (inp.down) {
@@ -403,7 +403,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           } else {
             holdOk = 0;
           }
-          rt.setStatus(`Doel: #${target} · Tijd: ${Math.ceil(timeLeft)}s`);
+          rt.setStatus(`Target: #${target} · Time: ${Math.ceil(timeLeft)}s`);
         },
         render(r) {
           const c = r.ctx;
@@ -419,7 +419,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
             if (i === dial) drawCircle(c, nx, ny, 18, 'rgba(250,204,21,0.45)', '#fde047');
             drawBadgeText(c, `${i}`, nx, ny, '#fff', 16);
           }
-          drawBadgeText(c, `DOEL: ${target}`, cx, cy, '#fde047', 26);
+          drawBadgeText(c, `TARGET: ${target}`, cx, cy, '#fde047', 26);
         },
       };
     },
@@ -431,8 +431,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '🏎️',
     category: 'runners',
     color: '#ef4444',
-    controlsHint: 'Houd ingedrukt om naar RECHTS te driften, laat los om naar LINKS te sturen!',
-    desc: 'Slinger door eindeloze neon-bochten en blijf op het asfalt.',
+    controlsHint: 'Hold to drift RIGHT, release to steer LEFT!',
+    desc: 'Weave through endless neon curves and stay on the road.',
     create(rt): MiniGameInstance {
       let cx = W / 2;
       let roadCenter = W / 2;
@@ -454,10 +454,10 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           rt.setScore(score);
           if (dir > 64) {
             rt.sfx.explode();
-            rt.endGame(score, `Van de racebaan gevlogen (${score} pt)!`);
+            rt.endGame(score, `Flew off the track (${score} pt)!`);
             return;
           }
-          rt.setStatus(`Houd=Rechts · Los=Links (${Math.round(speed)} km/u)`);
+          rt.setStatus(`Hold=Right · Release=Left (${Math.round(speed)} km/h)`);
         },
         render(r) {
           const c = r.ctx;
@@ -475,8 +475,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '🐔',
     category: 'runners',
     color: '#facc15',
-    controlsHint: 'Tik BOVEN je kip om naar voren te springen of tik LINKS/RECHTS voor zijstappen!',
-    desc: 'Steek drukke snelwegen vol auto’s en vrachtwagens veilig over.',
+    controlsHint: 'Tap TOP to hop forward or LEFT/RIGHT to sidestep traffic!',
+    desc: 'Cross busy highways packed with speeding cars.',
     create(rt): MiniGameInstance {
       let row = 0;
       let col = 4;
@@ -511,12 +511,12 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               l.cars[i] = (l.cars[i] + l.vx * dt + W + 120) % (W + 120) - 60;
               if (l.row === row && Math.abs(l.cars[i] - (col * 46 + 24)) < 32) {
                 rt.sfx.explode();
-                rt.endGame(score * 10, `Aangereden na ${score} stappen!`);
+                rt.endGame(score * 10, `Run over after ${score} hops!`);
                 return;
               }
             }
           }
-          rt.setStatus(`Stappen vooruit: ${score}`);
+          rt.setStatus(`Hops forward: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -541,8 +541,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '🛹',
     category: 'runners',
     color: '#38bdf8',
-    controlsHint: 'Tik op een van de 3 metrosporen om direct te wisselen — pak munten & ontwijk treinen!',
-    desc: 'Supersnelle 3-baans runner door verlichte metrotunnels.',
+    controlsHint: 'Tap any of the 3 tracks to switch lanes — grab coins & dodge trains!',
+    desc: 'High-speed 3-lane runner through subway tunnels.',
     create(rt): MiniGameInstance {
       let lane = 1;
       let score = 0;
@@ -571,7 +571,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
                 rt.sfx.score();
               } else {
                 rt.sfx.explode();
-                rt.endGame(score, `Tegen metro gebotst bij ${score} pt!`);
+                rt.endGame(score, `Hit a subway train at ${score} pt!`);
                 return;
               }
             }
@@ -581,7 +581,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               tr.coin = Math.random() < 0.35;
             }
           }
-          rt.setStatus(`Afstand + Munten: ${score}`);
+          rt.setStatus(`Distance + Coins: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -600,8 +600,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     icon: '🌋',
     category: 'runners',
     color: '#ef4444',
-    controlsHint: 'Sleep links/rechts en spring steeds hoger op meubels terwijl het lava stijgt!',
-    desc: 'De vloer is gesmolten lava! Spring van bank naar tafel naar boekenkast om te overleven.',
+    controlsHint: 'Drag left/right to bounce higher while the lava rises!',
+    desc: 'The floor is molten lava! Bounce upward across platforms.',
     create(rt): MiniGameInstance {
       let px = W / 2;
       let py = 460;
@@ -640,10 +640,10 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           }
           if (py > lavaY - 12 || py > H + 20) {
             rt.sfx.explode();
-            rt.endGame(score, `In de lava beland op ${score} pt!`);
+            rt.endGame(score, `Fell into the lava at ${score} pt!`);
             return;
           }
-          rt.setStatus(`Hoogte boven lava: ${score}m`);
+          rt.setStatus(`Height above lava: ${score}m`);
         },
         render(r) {
           const c = r.ctx;

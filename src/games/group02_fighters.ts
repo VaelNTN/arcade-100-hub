@@ -20,8 +20,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '🥋',
     category: 'fighters',
     color: '#ef4444',
-    controlsHint: 'Tik omhoog om te springen, tik opnieuw in de lucht voor een Divekick!',
-    desc: '1-Hit KO Dojo-duel! Spring boven je rivaal en land de genadeloze schuine duiktrap.',
+    controlsHint: 'Tap to jump, tap again mid-air for a Divekick!',
+    desc: '1-hit KO dojo duel! Leap above your rival and land a diving kick.',
     create(rt): MiniGameInstance {
       let px = 110;
       let py = 490;
@@ -99,13 +99,13 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Dojo KO! Eindscore: ${score}`);
+                rt.endGame(score, `Dojo KO! Final score: ${score}`);
                 return;
               }
               resetRound();
             }
           }
-          rt.setStatus(`Rondes gewonnen: ${score / 100}`);
+          rt.setStatus(`Rounds Won: ${score / 100}`);
         },
         render(r) {
           const c = r.ctx;
@@ -126,8 +126,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '⚔️',
     category: 'fighters',
     color: '#f59e0b',
-    controlsHint: 'Wacht op het gouden "!" teken en TIK razendsnel!',
-    desc: 'Staar naar de horizon. Wie het eerst slaat na het signaal wint — te vroeg tikken = straf!',
+    controlsHint: 'Wait for the golden "!" signal and TAP lightning fast!',
+    desc: 'Stare down your rival. Strike first on the signal — early taps lose!',
     create(rt): MiniGameInstance {
       let state: 'wait' | 'ready' | 'cooldown' = 'wait';
       let waitTimer = rand(1.4, 3.2);
@@ -135,20 +135,20 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
       let aiLimit = 0.55;
       let score = 0;
       let round = 1;
-      let banner = 'Wacht op teken...';
+      let banner = 'Wait for signal...';
       return {
         update(dt, inp) {
           if (state === 'wait') {
             waitTimer -= dt;
             if (inp.justPressed) {
               rt.sfx.hit();
-              rt.endGame(score, `Te vroeg bewogen in ronde ${round}!`);
+              rt.endGame(score, `Struck too early in round ${round}!`);
               return;
             }
             if (waitTimer <= 0) {
               state = 'ready';
               reactMs = 0;
-              banner = '⚡ SLAG NU!! ⚡';
+              banner = '⚡ STRIKE NOW!! ⚡';
               rt.sfx.tap();
             }
           } else if (state === 'ready') {
@@ -158,14 +158,14 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
               score += pts;
               rt.setScore(score);
               rt.sfx.win();
-              banner = `GEWONNEN! (${Math.round(reactMs * 1000)}ms)`;
+              banner = `WON! (${Math.round(reactMs * 1000)}ms)`;
               state = 'cooldown';
               waitTimer = 1.2;
               round++;
               aiLimit = Math.max(0.24, 0.55 - round * 0.035);
             } else if (reactMs >= aiLimit) {
               rt.sfx.explode();
-              rt.endGame(score, `Te laat! Rival sloeg in ${Math.round(aiLimit * 1000)}ms`);
+              rt.endGame(score, `Too slow! Rival struck in ${Math.round(aiLimit * 1000)}ms`);
               return;
             }
           } else {
@@ -173,7 +173,7 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
             if (waitTimer <= 0) {
               state = 'wait';
               waitTimer = rand(1.3, 3.3);
-              banner = `Ronde ${round} · Concentreer...`;
+              banner = `Round ${round} · Focus...`;
             }
           }
           rt.setStatus(banner);
@@ -197,8 +197,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '🖐️',
     category: 'fighters',
     color: '#ec4899',
-    controlsHint: 'Tik zodra de krachtmeter exact in het MIDDEN staat voor maximale impact!',
-    desc: 'Timing-vechtspel: bouw gigantische combo-klappen op tegen steeds sterkere kampioenen.',
+    controlsHint: 'Tap when the power needle hits the CENTER for maximum impact!',
+    desc: 'Timing slap duel: land massive hits to knock out tougher champs.',
     create(rt): MiniGameInstance {
       let needle = 0.5;
       let dir = 1;
@@ -236,12 +236,12 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
               rt.sfx.score();
               if (tries <= 0) {
                 rt.sfx.hit();
-                rt.endGame(score, `Tegenstander overleefde! Score: ${score}`);
+                rt.endGame(score, `Opponent survived! Score: ${score}`);
                 return;
               }
             }
           }
-          rt.setStatus(`Vijand HP: ${enemyHp} · Pogingen: ${tries}`);
+          rt.setStatus(`Enemy HP: ${enemyHp} · Tries: ${tries}`);
         },
         render(r) {
           const c = r.ctx;
@@ -264,8 +264,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '🏋️',
     category: 'fighters',
     color: '#b45309',
-    controlsHint: 'Tik zo SNEL mogelijk op de Sumo-knop om de tegenstander uit de ring te duwen!',
-    desc: 'Krachtduel in het Japanse dohyo-zand: verhoog je duwtempo elke ronde.',
+    controlsHint: 'Tap as FAST as possible to push your rival out of the ring!',
+    desc: 'Dohyo ring power duel: mash faster each round to win.',
     create(rt): MiniGameInstance {
       let balance = 0; // -1 lose, +1 win
       let aiForce = 0.42;
@@ -287,10 +287,10 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
             rt.sfx.win();
           } else if (balance <= -1) {
             rt.sfx.explode();
-            rt.endGame(score, `Uit de ring geduwd in ronde ${round}!`);
+            rt.endGame(score, `Pushed out of the ring in round ${round}!`);
             return;
           }
-          rt.setStatus(`Ronde ${round} · Tik snel om te duwen!`);
+          rt.setStatus(`Round ${round} · Tap fast to push!`);
         },
         render(r) {
           const c = r.ctx;
@@ -299,7 +299,7 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
           const ox = W / 2 + balance * 95;
           drawBadgeText(c, '🦍', ox - 32, 330, '#fff', 50);
           drawBadgeText(c, '👹', ox + 32, 330, '#fff', 50);
-          drawBadgeText(c, 'TIK RAZENDSNEL!', W / 2, 540, '#fde047', 22);
+          drawBadgeText(c, 'TAP SUPER FAST!', W / 2, 540, '#fde047', 22);
         },
       };
     },
@@ -311,8 +311,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '🏹',
     category: 'fighters',
     color: '#0ea5e9',
-    controlsHint: 'Sleep achteruit vanaf je schutter en laat los om speren naar vijanden te werpen!',
-    desc: 'Bereken boogschot en zwaartekracht tegen vijanden op hoge rotsplatformen.',
+    controlsHint: 'Drag back from your archer and release to launch spears!',
+    desc: 'Aim arc shots with gravity against distant targets.',
     create(rt): MiniGameInstance {
       let targetX = 320;
       let targetY = rand(180, 420);
@@ -350,10 +350,10 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
           }
           if (ammo <= 0 && spears.length === 0) {
             rt.sfx.hit();
-            rt.endGame(score, `Speren op! Eindscore: ${score}`);
+            rt.endGame(score, `Out of spears! Final score: ${score}`);
             return;
           }
-          rt.setStatus(`Speren over: ${ammo}`);
+          rt.setStatus(`Spears left: ${ammo}`);
         },
         render(r) {
           const c = r.ctx;
@@ -382,8 +382,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '🥊',
     category: 'fighters',
     color: '#dc2626',
-    controlsHint: 'Tik LINKS of RECHTS weg van rode stoot-waarschuwingen en deel counters uit!',
-    desc: 'Lees de waarschuwing van de bokskampioen, ontwijk en land directe uppercuts.',
+    controlsHint: 'Tap LEFT or RIGHT away from incoming red punches!',
+    desc: "Read the champ's telegraph, slip punches, and score counters.",
     create(rt): MiniGameInstance {
       let side: 'L' | 'R' = 'L';
       let enemySide: 'L' | 'R' = 'R';
@@ -405,7 +405,7 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Knock-out! Score: ${score}`);
+                rt.endGame(score, `Knocked out! Score: ${score}`);
                 return;
               }
             } else {
@@ -416,7 +416,7 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
             }
             enemySide = Math.random() < 0.5 ? 'L' : 'R';
           }
-          rt.setStatus(`Score: ${score} · Ontwijk ${enemySide === 'L' ? 'LINKS' : 'RECHTS'}!`);
+          rt.setStatus(`Score: ${score} · Dodge ${enemySide === 'L' ? 'LEFT' : 'RIGHT'}!`);
         },
         render(r) {
           const c = r.ctx;
@@ -438,8 +438,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '🐎',
     category: 'fighters',
     color: '#64748b',
-    controlsHint: 'Sleep omhoog/omlaag om lanshoogte precies op het zwakke punt van het schild te richten!',
-    desc: 'Middeleeuws steekspel: raak de gouden doelcirkel op de aanstormende ridder.',
+    controlsHint: 'Drag up/down to align your lance with the golden target!',
+    desc: "Medieval jousting: strike the charging knight's weak spot.",
     create(rt): MiniGameInstance {
       let lanceY = 300;
       let targetY = rand(220, 390);
@@ -461,14 +461,14 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Uit het zadel gelicht! Score: ${score}`);
+                rt.endGame(score, `Unhorsed! Score: ${score}`);
                 return;
               }
             }
             chargeX = W + 60;
             targetY = rand(200, 410);
           }
-          rt.setStatus(`Toernooi Score: ${score}`);
+          rt.setStatus(`Tournament Score: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -497,8 +497,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '🥷',
     category: 'fighters',
     color: '#6366f1',
-    controlsHint: 'Tik BOVEN, ONDER, LINKS of RECHTS om vliegende werpsterren af te weren!',
-    desc: '360-graden ninja-verdediging: tik in de richting van de dichtstbijzijnde shuriken.',
+    controlsHint: 'Tap UP, DOWN, LEFT, or RIGHT to parry incoming shurikens!',
+    desc: '360-degree ninja defense: parry flying stars before they hit.',
     create(rt): MiniGameInstance {
       type Dir = 0 | 1 | 2 | 3; // U, R, D, L
       const stars: { dir: Dir; dist: number; speed: number }[] = [{ dir: 0, dist: 230, speed: 120 }];
@@ -539,12 +539,12 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Geraakt! Score: ${score}`);
+                rt.endGame(score, `Hit! Score: ${score}`);
                 return;
               }
             }
           }
-          rt.setStatus(`Gepareerd: ${score}`);
+          rt.setStatus(`Parried: ${score}`);
         },
         render(r) {
           const c = r.ctx;
@@ -567,8 +567,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '🏛️',
     category: 'fighters',
     color: '#eab308',
-    controlsHint: 'Tik ergens om die kant op te dashen en vijanden neer te maaien!',
-    desc: '1-knops colosseum dash-gevecht tegen aanstormende krijgers.',
+    controlsHint: 'Tap anywhere to dash in that direction and slice through foes!',
+    desc: 'One-button colosseum dash combat against charging gladiators.',
     create(rt): MiniGameInstance {
       let gx = W / 2;
       let gy = 340;
@@ -616,7 +616,7 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
               f.y = Math.random() < 0.5 ? 60 : H - 30;
             }
           }
-          rt.setStatus(`Overleef · Dash op vijanden!`);
+          rt.setStatus(`Survive · Dash into foes!`);
         },
         render(r) {
           const c = r.ctx;
@@ -636,8 +636,8 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
     icon: '🔦',
     category: 'fighters',
     color: '#38bdf8',
-    controlsHint: 'Tik LINKS, MIDDEN of RECHTS om je plasmazwaard op tijd voor droids te zwaaien!',
-    desc: 'Kaats schoten van 3 laser-droids direct terug naar hun afzender.',
+    controlsHint: 'Tap LEFT, CENTER, or RIGHT to deflect droid laser bolts!',
+    desc: 'Deflect incoming blaster shots right back at the 3 hover droids.',
     create(rt): MiniGameInstance {
       let lane = 1;
       let score = 0;
@@ -671,12 +671,12 @@ export const GROUP_02_FIGHTERS: MiniGameDef[] = [
               lives--;
               rt.sfx.hit();
               if (lives <= 0) {
-                rt.endGame(score, `Droid lasers doorbroken (${score} pt)!`);
+                rt.endGame(score, `Droid lasers breached (${score} pt)!`);
                 return;
               }
             }
           }
-          rt.setStatus(`Gekaatste schoten: ${score / 30}`);
+          rt.setStatus(`Deflected shots: ${score / 30}`);
         },
         render(r) {
           const c = r.ctx;
