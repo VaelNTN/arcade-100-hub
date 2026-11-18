@@ -1,12 +1,22 @@
 import { H, MiniGameDef, MiniGameInstance, W } from '../types';
 import {
+  Burst,
   clamp,
   drawBadgeText,
+  drawCarSprite,
+  drawCharacterSprite,
   drawCircle,
   drawGradientBg,
   drawLives,
   drawRoundedBox,
+  drawStarfield,
+  drawTrainSprite,
+  FloatingPopup,
   rand,
+  spawnBurst,
+  spawnPopup,
+  updateAndDrawBursts,
+  updateAndDrawPopups,
 } from '../game/engineHelpers';
 
 export const GROUP_05_CASUAL: MiniGameDef[] = [
@@ -25,9 +35,13 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       let vy = 0;
       let spd = 220;
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const dune = (x: number) => 440 + Math.sin(x * 0.012) * 80;
       return {
         update(dt, inp) {
+          lastDt = dt;
           dist += spd * dt;
           if (inp.down) vy += 1400 * dt;
           vy += 600 * dt;
@@ -40,6 +54,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               score += 35;
               rt.setScore(score);
               rt.sfx.score();
+              spawnBurst(bursts, 100, gy, '#fde047', 12);
+              spawnPopup(popups, 100, gy - 26, 'SMOOTH! +35', '#fde047', 16);
             } else if (vy > 510 && slope > 4) {
               rt.sfx.explode();
               rt.endGame(score, `Crashed into a dune at ${score} pt!`);
@@ -57,7 +73,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#fb923c', '#7c2d12');
+          drawGradientBg(c, '#fb923c', '#7c2d12', 'rgba(250,204,21,0.15)');
           c.strokeStyle = 'rgba(255,255,255,0.45)';
           c.setLineDash([8, 8]);
           c.beginPath();
@@ -72,7 +88,9 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           c.lineTo(W, H);
           c.closePath();
           c.fill();
-          drawCircle(c, 100, py - 12, 13, '#ef4444', '#fff');
+          drawCircle(c, 100, py - 12, 13, '#ef4444', '#fff', '#f97316');
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -93,12 +111,19 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       let level = 1;
       let left = 3;
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       return {
         update(dt, inp) {
+          lastDt = dt;
           ang += dir * (2.2 + level * 0.28) * dt;
           if (inp.justPressed) {
             const diff = Math.abs(Math.atan2(Math.sin(ang - target), Math.cos(ang - target)));
             if (diff < 0.34) {
+              const px = W / 2 + Math.cos(target) * 120;
+              const py = 330 + Math.sin(target) * 120;
+              spawnBurst(bursts, px, py, '#fde047', 12);
               score += 30;
               left--;
               dir *= -1;
@@ -111,6 +136,9 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
                 score += 50;
                 rt.setScore(score);
                 rt.sfx.win();
+                spawnPopup(popups, W / 2, 175, `VAULT ${level - 1} OPEN! +50`, '#4ade80', 18);
+              } else {
+                spawnPopup(popups, px, py - 16, '+30', '#fde047', 16);
               }
             } else {
               rt.sfx.hit();
@@ -122,7 +150,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#0f172a', '#064e3b');
+          drawGradientBg(c, '#0f172a', '#064e3b', 'rgba(34,197,94,0.14)');
           const cx = W / 2;
           const cy = 330;
           c.strokeStyle = '#334155';
@@ -130,7 +158,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           c.beginPath();
           c.arc(cx, cy, 120, 0, Math.PI * 2);
           c.stroke();
-          drawCircle(c, cx + Math.cos(target) * 120, cy + Math.sin(target) * 120, 16, '#facc15', '#fff');
+          drawCircle(c, cx + Math.cos(target) * 120, cy + Math.sin(target) * 120, 16, '#facc15', '#fff', '#facc15');
           c.strokeStyle = '#ef4444';
           c.lineWidth = 8;
           c.beginPath();
@@ -138,6 +166,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           c.lineTo(cx + Math.cos(ang) * 145, cy + Math.sin(ang) * 145);
           c.stroke();
           drawBadgeText(c, `${left}`, cx, cy, '#fff', 52);
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -162,6 +192,9 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       let bucketVx = 95;
       let score = 0;
       let lives = 3;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const reset = () => {
         cut = false;
         vx = 0;
@@ -169,9 +202,13 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       };
       return {
         update(dt, inp) {
+          lastDt = dt;
           t += dt * 2.5;
           bucketX += bucketVx * dt;
-          if (bucketX < 65 || bucketX > W - 65) bucketVx *= -1;
+          if (bucketX < 65 || bucketX > W - 65) {
+            bucketX = clamp(bucketX, 65, W - 65);
+            bucketVx *= -1;
+          }
           if (!cut) {
             const ang = Math.sin(t) * 0.9;
             bx = W / 2 + Math.sin(ang) * 150;
@@ -180,6 +217,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               cut = true;
               vx = Math.cos(t) * 240;
               vy = 40;
+              spawnBurst(bursts, (W / 2 + bx) * 0.5, (85 + by) * 0.5, '#fde68a', 6, 0.5);
               rt.sfx.tap();
             }
           } else {
@@ -191,6 +229,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               bucketVx = (bucketVx > 0 ? 1 : -1) * Math.min(260, Math.abs(bucketVx) + 12);
               rt.setScore(score);
               rt.sfx.win();
+              spawnBurst(bursts, bucketX, 535, '#22c55e', 14);
+              spawnPopup(popups, bucketX, 505, '+50 🍬', '#fde047');
               reset();
             } else if (by > H + 20) {
               lives--;
@@ -206,7 +246,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#3b0764', '#0f172a');
+          drawGradientBg(c, '#3b0764', '#0f172a', 'rgba(236,72,153,0.14)');
           if (!cut) {
             c.strokeStyle = '#fde68a';
             c.lineWidth = 4;
@@ -217,7 +257,9 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           }
           drawCircle(c, W / 2, 85, 8, '#fff');
           drawBadgeText(c, '🍬', bx, by, '#fff', 32);
-          drawRoundedBox(c, bucketX - 45, 535, 90, 26, 8, '#22c55e', '#fff');
+          drawRoundedBox(c, bucketX - 45, 535, 90, 26, 8, '#22c55e', '#fff', 'rgba(34,197,94,0.35)');
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
           drawLives(c, lives);
         },
       };
@@ -245,8 +287,14 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       let vx = 0;
       let vy = 0;
       let score = 0;
+      let time = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       return {
         update(dt, inp) {
+          lastDt = dt;
+          time += dt;
           if (onPlanet !== null) {
             orbAng += 3.0 * dt;
             const p = planets[onPlanet];
@@ -256,6 +304,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
               onPlanet = null;
               vx = Math.cos(orbAng) * 420;
               vy = Math.sin(orbAng) * 420;
+              spawnBurst(bursts, px, py, '#38bdf8', 8, 0.6);
               rt.sfx.tap();
             }
           } else {
@@ -268,10 +317,14 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
                 score += 30;
                 rt.setScore(score);
                 rt.sfx.score();
+                spawnBurst(bursts, p.x, p.y, '#a855f7', 14);
+                spawnPopup(popups, p.x, p.y - p.r - 12, '+30 🪐', '#fde047');
                 const shift = 470 - p.y;
                 for (const pl of planets) pl.y += shift;
-                planets.shift();
-                planets.push({ x: rand(75, W - 75), y: planets[planets.length - 1].y - 190, r: rand(32, 44) });
+                planets.splice(0, i);
+                while (planets.length < 3) {
+                  planets.push({ x: rand(75, W - 75), y: planets[planets.length - 1].y - 190, r: rand(32, 44) });
+                }
                 orbAng = Math.atan2(py - planets[0].y, px - planets[0].x);
                 break;
               }
@@ -286,11 +339,29 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#020617', '#1e1b4b');
+          drawGradientBg(c, '#020617', '#1e1b4b', 'rgba(99,102,241,0.18)');
+          drawStarfield(c, time, 32, 12);
           planets.forEach((p, idx) => {
-            drawCircle(c, p.x, p.y, p.r, idx === 0 ? '#38bdf8' : '#a855f7', '#fff');
+            c.strokeStyle = 'rgba(255,255,255,0.18)';
+            c.lineWidth = 1.5;
+            c.setLineDash([4, 6]);
+            c.beginPath();
+            c.arc(p.x, p.y, p.r + 18, 0, Math.PI * 2);
+            c.stroke();
+            c.setLineDash([]);
+            const col = idx === 0 ? '#38bdf8' : '#a855f7';
+            drawCircle(c, p.x, p.y, p.r, col, '#fff', col);
           });
-          drawBadgeText(c, '🧑‍🚀', px, py, '#fff', 26);
+          drawCharacterSprite(c, px, py, {
+            style: 'astronaut',
+            suitColor: '#f8fafc',
+            accentColor: '#f97316',
+            action: onPlanet === null ? 'jump' : 'idle',
+            stride: time * 6,
+            scale: 0.9,
+          });
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -306,13 +377,17 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     desc: '4-lane rhythm action: hit notes on the beat without missing.',
     create(rt): MiniGameInstance {
       const notes: { lane: number; y: number }[] = [];
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       let spawnT = 0.4;
       let score = 0;
       let lives = 5;
+      let lastDt = 0.016;
       const laneW = W / 4;
       const cols = ['#ef4444', '#38bdf8', '#22c55e', '#facc15'];
       return {
         update(dt, inp) {
+          lastDt = dt;
           spawnT -= dt;
           if (spawnT <= 0) {
             notes.push({ lane: Math.floor(Math.random() * 4), y: -20 });
@@ -322,10 +397,13 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
             const lane = clamp(Math.floor(inp.x / laneW), 0, 3);
             const idx = notes.findIndex((n) => n.lane === lane && Math.abs(n.y - 535) < 55);
             if (idx >= 0) {
+              const nx = lane * laneW + laneW / 2;
               notes.splice(idx, 1);
               score += 25;
               rt.setScore(score);
               rt.sfx.score();
+              spawnBurst(bursts, nx, 535, cols[lane], 12);
+              spawnPopup(popups, nx, 505, '+25 ♪', cols[lane], 16);
             } else {
               rt.sfx.hit();
             }
@@ -346,7 +424,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#090d16', '#3b0764');
+          drawGradientBg(c, '#090d16', '#3b0764', 'rgba(217,70,239,0.16)');
           for (let i = 1; i < 4; i++) {
             c.strokeStyle = 'rgba(255,255,255,0.12)';
             c.beginPath();
@@ -354,10 +432,12 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
             c.lineTo(i * laneW, H);
             c.stroke();
           }
-          drawRoundedBox(c, 8, 520, W - 16, 30, 8, 'rgba(255,255,255,0.15)', '#fff');
+          drawRoundedBox(c, 8, 520, W - 16, 30, 8, 'rgba(255,255,255,0.15)', '#fff', 'rgba(255,255,255,0.3)');
           for (const n of notes) {
-            drawRoundedBox(c, n.lane * laneW + 10, n.y - 16, laneW - 20, 32, 8, cols[n.lane], '#fff');
+            drawRoundedBox(c, n.lane * laneW + 10, n.y - 16, laneW - 20, 32, 8, cols[n.lane], '#fff', cols[n.lane]);
           }
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -377,8 +457,12 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       let holdOk = 0;
       let timeLeft = 30;
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       return {
         update(dt, inp) {
+          lastDt = dt;
           timeLeft -= dt;
           if (timeLeft <= 0) {
             rt.sfx.explode();
@@ -393,6 +477,11 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           if (dial === target) {
             holdOk += dt;
             if (holdOk >= 0.35) {
+              const a = (target / 12) * Math.PI * 2 - Math.PI / 2;
+              const tx = W / 2 + Math.cos(a) * 105;
+              const ty = 340 + Math.sin(a) * 105;
+              spawnBurst(bursts, tx, ty, '#22c55e', 12);
+              spawnPopup(popups, W / 2, 270, '+40 🔓', '#4ade80');
               score += 40;
               timeLeft = Math.min(35, timeLeft + 2.5);
               holdOk = 0;
@@ -407,7 +496,7 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1e293b', '#090d16');
+          drawGradientBg(c, '#1e293b', '#090d16', 'rgba(100,116,139,0.16)');
           const cx = W / 2;
           const cy = 340;
           drawCircle(c, cx, cy, 130, '#334155', '#94a3b8');
@@ -415,11 +504,13 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
             const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
             const nx = cx + Math.cos(a) * 105;
             const ny = cy + Math.sin(a) * 105;
-            if (i === target) drawCircle(c, nx, ny, 16, '#22c55e');
+            if (i === target) drawCircle(c, nx, ny, 16, '#22c55e', undefined, '#22c55e');
             if (i === dial) drawCircle(c, nx, ny, 18, 'rgba(250,204,21,0.45)', '#fde047');
             drawBadgeText(c, `${i}`, nx, ny, '#fff', 16);
           }
           drawBadgeText(c, `TARGET: ${target}`, cx, cy, '#fde047', 26);
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -436,23 +527,26 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       let cx = W / 2;
       let roadCenter = W / 2;
-      let dir = 1;
       let score = 0;
-      const trail: { x: number; y: number }[] = [];
       let t = 0;
+      let driftingRight = false;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const roadAt = (timeVal: number) => W / 2 + Math.sin(timeVal * 1.4) * 105 + Math.cos(timeVal * 2.5) * 35;
       return {
         update(dt, inp) {
+          lastDt = dt;
           t += dt;
+          driftingRight = inp.down;
           const speed = 190 + score * 0.8;
           cx += (inp.down ? 1 : -1) * 210 * dt;
-          roadCenter = W / 2 + Math.sin(t * 1.4) * 105 + Math.cos(t * 2.5) * 35;
-          dir = Math.abs(cx - roadCenter);
-          trail.unshift({ x: roadCenter, y: 490 });
-          for (const p of trail) p.y -= 170 * dt;
-          if (trail.length > 35) trail.pop();
+          roadCenter = roadAt(t);
+          if (Math.random() < 0.35) {
+            spawnBurst(bursts, cx, 505, inp.down ? '#f43f5e' : '#38bdf8', 2, 0.35);
+          }
           score += Math.round(dt * 30);
           rt.setScore(score);
-          if (dir > 64) {
+          if (Math.abs(cx - roadCenter) > 64) {
             rt.sfx.explode();
             rt.endGame(score, `Flew off the track (${score} pt)!`);
             return;
@@ -461,9 +555,45 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#090d16', '#334155');
-          drawRoundedBox(c, roadCenter - 62, 0, 124, H, 0, '#1e293b', '#f43f5e');
-          drawBadgeText(c, '🏎️', cx, 490, '#fff', 36);
+          drawGradientBg(c, '#090d16', '#334155', 'rgba(239,68,68,0.14)');
+          const stepY = 16;
+          c.fillStyle = '#1e293b';
+          c.beginPath();
+          for (let y = 0; y <= H; y += stepY) {
+            const rc = roadAt(t + (490 - y) / 220);
+            if (y === 0) c.moveTo(rc - 62, y);
+            else c.lineTo(rc - 62, y);
+          }
+          for (let y = H; y >= 0; y -= stepY) {
+            const rc = roadAt(t + (490 - y) / 220);
+            c.lineTo(rc + 62, y);
+          }
+          c.closePath();
+          c.fill();
+
+          c.strokeStyle = '#f43f5e';
+          c.lineWidth = 3;
+          c.beginPath();
+          for (let y = 0; y <= H; y += stepY) {
+            const rc = roadAt(t + (490 - y) / 220);
+            if (y === 0) c.moveTo(rc - 62, y);
+            else c.lineTo(rc - 62, y);
+          }
+          c.stroke();
+          c.beginPath();
+          for (let y = 0; y <= H; y += stepY) {
+            const rc = roadAt(t + (490 - y) / 220);
+            if (y === 0) c.moveTo(rc + 62, y);
+            else c.lineTo(rc + 62, y);
+          }
+          c.stroke();
+
+          updateAndDrawBursts(c, bursts, lastDt);
+          drawCarSprite(c, cx, 490, driftingRight ? 0.28 : -0.28, '#ef4444', '#fde047', {
+            spoiler: true,
+            headlights: true,
+            scale: 1.05,
+          });
         },
       };
     },
@@ -482,6 +612,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       let col = 4;
       let camRow = 0;
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
       const lanes = Array.from({ length: 14 }, (_, idx) => ({
         row: idx,
         road: idx > 0 && idx % 4 !== 0,
@@ -490,10 +622,12 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       }));
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed) {
             if (inp.y < 360) row++;
             else if (inp.x < W / 2) col = Math.max(0, col - 1);
             else col = Math.min(8, col + 1);
+            spawnBurst(bursts, col * 46 + 24, 560 - (row - camRow) * 52, '#fde047', 4, 0.4);
             rt.sfx.tap();
             if (row > score) {
               score = row;
@@ -526,9 +660,20 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
             if (sy < -50 || sy > H + 50) continue;
             drawRoundedBox(c, 0, sy - 24, W, 50, 0, l.road ? '#334155' : '#16a34a');
             if (l.road) {
-              for (const cx of l.cars) drawBadgeText(c, l.vx > 0 ? '🚕' : '🚙', cx, sy, '#fff', 30);
+              for (const cx of l.cars) {
+                drawCarSprite(
+                  c,
+                  cx,
+                  sy,
+                  l.vx > 0 ? Math.PI / 2 : -Math.PI / 2,
+                  l.vx > 0 ? '#facc15' : '#3b82f6',
+                  l.vx > 0 ? '#0f172a' : '#f8fafc',
+                  { taxi: l.vx > 0, headlights: true, scale: 0.88 }
+                );
+              }
             }
           }
+          updateAndDrawBursts(c, bursts, lastDt);
           drawBadgeText(c, '🐔', col * 46 + 24, 560 - (row - camRow) * 52, '#fff', 32);
         },
       };
@@ -546,6 +691,10 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       let lane = 1;
       let score = 0;
+      let time = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const laneX = (l: number) => 85 + l * 125;
       const trains = Array.from({ length: 5 }, (_, i) => ({
         lane: i % 3,
@@ -554,6 +703,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       }));
       return {
         update(dt, inp) {
+          lastDt = dt;
+          time += dt;
           if (inp.justPressed) {
             lane = clamp(Math.floor(inp.x / (W / 3)), 0, 2);
             rt.sfx.tap();
@@ -566,6 +717,8 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
             if (tr.lane === lane && Math.abs(tr.y - 520) < 34) {
               if (tr.coin) {
                 score += 30;
+                spawnBurst(bursts, laneX(lane), 520, '#fde047', 10);
+                spawnPopup(popups, laneX(lane), 490, '+30 🪙', '#fde047');
                 tr.y = -120;
                 tr.lane = Math.floor(Math.random() * 3);
                 rt.sfx.score();
@@ -585,10 +738,22 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#0f172a', '#1e293b');
+          drawGradientBg(c, '#0f172a', '#1e293b', 'rgba(56,189,248,0.14)');
           for (let l = 0; l < 3; l++) drawRoundedBox(c, laneX(l) - 36, 0, 72, H, 0, 'rgba(255,255,255,0.05)');
-          for (const tr of trains) drawBadgeText(c, tr.coin ? '🪙' : '🚆', laneX(tr.lane), tr.y, '#fff', 36);
-          drawBadgeText(c, '🛹', laneX(lane), 520, '#fff', 36);
+          for (const tr of trains) {
+            if (tr.coin) drawBadgeText(c, '🪙', laneX(tr.lane), tr.y, '#fff', 32);
+            else drawTrainSprite(c, laneX(tr.lane), tr.y, '#ef4444', '#fde047');
+          }
+          drawCharacterSprite(c, laneX(lane), 520, {
+            style: 'runner',
+            suitColor: '#38bdf8',
+            accentColor: '#f43f5e',
+            stride: time * 14,
+            action: 'idle',
+            scale: 1.15,
+          });
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -608,9 +773,12 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
       let vy = -440;
       let lavaY = H + 20;
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
       const furn = Array.from({ length: 10 }, (_, i) => ({ x: rand(25, W - 105), y: 510 - i * 62, w: 85 }));
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (inp.down) px += clamp((inp.x - px) * 10, -340, 340) * dt;
           px = clamp(px, 20, W - 20);
           vy += 940 * dt;
@@ -618,9 +786,12 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
           lavaY -= (26 + score * 0.08) * dt;
           if (vy > 0) {
             for (const f of furn) {
-              if (px >= f.x - 10 && px <= f.x + f.w + 10 && py >= f.y - 12 && py <= f.y + 12) {
+              if (px >= f.x - 10 && px <= f.x + f.w + 10 && py >= f.y - 14 && py <= f.y + 14) {
                 vy = -540;
+                py = f.y - 10;
+                spawnBurst(bursts, px, f.y, '#fde047', 7, 0.55);
                 rt.sfx.tap();
+                break;
               }
             }
           }
@@ -647,10 +818,17 @@ export const GROUP_05_CASUAL: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#450a0a', '#7c2d12');
+          drawGradientBg(c, '#450a0a', '#7c2d12', 'rgba(239,68,68,0.2)');
           for (const f of furn) drawRoundedBox(c, f.x, f.y, f.w, 14, 6, '#facc15', '#78350f');
-          drawBadgeText(c, '🏃', px, py - 12, '#fff', 32);
-          drawRoundedBox(c, 0, lavaY, W, H - lavaY + 40, 0, '#ef4444');
+          drawCharacterSprite(c, px, py - 14, {
+            style: 'runner',
+            suitColor: '#f97316',
+            accentColor: '#fde047',
+            action: vy < 0 ? 'jump' : 'idle',
+            scale: 1.05,
+          });
+          drawRoundedBox(c, 0, lavaY, W, H - lavaY + 40, 0, '#ef4444', '#fde047', '#ef4444');
+          updateAndDrawBursts(c, bursts, lastDt);
         },
       };
     },

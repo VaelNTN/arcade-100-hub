@@ -1,12 +1,19 @@
 import { H, MiniGameDef, MiniGameInstance, W } from '../types';
 import {
+  Burst,
   clamp,
   drawBadgeText,
+  drawCharacterSprite,
   drawCircle,
   drawGradientBg,
   drawLives,
   drawRoundedBox,
+  FloatingPopup,
   rand,
+  spawnBurst,
+  spawnPopup,
+  updateAndDrawBursts,
+  updateAndDrawPopups,
 } from '../game/engineHelpers';
 
 export const GROUP_07_PHYSICS: MiniGameDef[] = [
@@ -27,6 +34,9 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
       let vy = -290;
       let score = 0;
       let lives = 3;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const cols = ['#ef4444', '#fb923c', '#facc15', '#22c55e', '#38bdf8'];
       let bricks: { x: number; y: number; color: string }[] = [];
       const initBricks = () => {
@@ -38,6 +48,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
       initBricks();
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (inp.down) padX = clamp(inp.x, 48, W - 48);
           bx += vx * dt;
           by += vy * dt;
@@ -50,8 +61,9 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
             by = 65;
           }
           if (vy > 0 && by >= 550 && by <= 570 && Math.abs(bx - padX) < 54) {
-            vy = -Math.abs(vy) * 1.02;
-            vx = (bx - padX) * 5.2;
+            vy = -clamp(Math.abs(vy) * 1.02, 260, 580);
+            vx = clamp((bx - padX) * 5.2, -380, 380);
+            spawnBurst(bursts, bx, 558, '#38bdf8', 5, 0.45);
             rt.sfx.tap();
           }
           for (let i = bricks.length - 1; i >= 0; i--) {
@@ -62,6 +74,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               score += 20;
               rt.setScore(score);
               rt.sfx.score();
+              spawnBurst(bursts, b.x + 28, b.y + 10, b.color, 10);
+              spawnPopup(popups, b.x + 28, b.y, '+20', b.color, 15);
               break;
             }
           }
@@ -69,6 +83,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
             score += 100;
             rt.setScore(score);
             rt.sfx.win();
+            spawnPopup(popups, W / 2, 260, 'CLEAR! +100', '#fde047', 22);
             initBricks();
           }
           if (by > H + 20) {
@@ -87,10 +102,12 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#090d16', '#1e1b4b');
-          for (const b of bricks) drawRoundedBox(c, b.x, b.y, 56, 20, 4, b.color);
-          drawRoundedBox(c, padX - 46, 558, 92, 14, 7, '#38bdf8', '#fff');
-          drawCircle(c, bx, by, 8, '#fde047', '#fff');
+          drawGradientBg(c, '#090d16', '#1e1b4b', 'rgba(56,189,248,0.16)');
+          for (const b of bricks) drawRoundedBox(c, b.x, b.y, 56, 20, 4, b.color, 'rgba(255,255,255,0.45)');
+          drawRoundedBox(c, padX - 46, 558, 92, 14, 7, '#38bdf8', '#fff', '#38bdf8');
+          drawCircle(c, bx, by, 8, '#fde047', '#fff', '#facc15');
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
           drawLives(c, lives);
         },
       };
@@ -114,6 +131,9 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
       let aim = { x: wx, y: wy };
       let score = 0;
       let shots = 8;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       let balls = [
         { x: W / 2, y: 240, vx: 0, vy: 0 },
         { x: 140, y: 190, vx: 0, vy: 0 },
@@ -127,6 +147,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
       ];
       return {
         update(dt, inp) {
+          lastDt = dt;
           const moving = Math.hypot(wvx, wvy) > 8 || balls.some((b) => Math.hypot(b.vx, b.vy) > 8);
           if (!moving) {
             if (shots <= 0) {
@@ -174,13 +195,21 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
             if (d > 0 && d < 24) {
               const nx = dx / d;
               const ny = dy / d;
+              const overlap = (24 - d) * 0.55;
+              b.x = clamp(b.x + nx * overlap, 34, W - 34);
+              b.y = clamp(b.y + ny * overlap, 78, H - 34);
+              wx = clamp(wx - nx * overlap, 34, W - 34);
+              wy = clamp(wy - ny * overlap, 78, H - 34);
               b.vx += wvx * 0.75 + nx * 90;
               b.vy += wvy * 0.75 + ny * 90;
               wvx *= 0.45;
               wvy *= 0.45;
+              spawnBurst(bursts, (wx + b.x) / 2, (wy + b.y) / 2, '#f8fafc', 5, 0.4);
               rt.sfx.tap();
             }
             if (pockets.some((p) => Math.hypot(b.x - p.x, b.y - p.y) < 26)) {
+              spawnBurst(bursts, b.x, b.y, '#fde047', 14);
+              spawnPopup(popups, b.x, b.y - 12, 'POCKET! +100', '#fde047', 17);
               balls.splice(i, 1);
               score += 100;
               shots += 2;
@@ -201,17 +230,21 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
           const c = r.ctx;
           drawGradientBg(c, '#78350f', '#451a03');
           drawRoundedBox(c, 22, 66, W - 44, H - 88, 12, '#15803d', '#92400e');
-          for (const p of pockets) drawCircle(c, p.x, p.y, 18, '#020617');
+          for (const p of pockets) drawCircle(c, p.x, p.y, 18, '#020617', '#78350f');
           for (const b of balls) drawCircle(c, b.x, b.y, 12, '#ef4444', '#fff');
           if (drag) {
             c.strokeStyle = '#fde047';
             c.lineWidth = 3;
+            c.setLineDash([6, 4]);
             c.beginPath();
             c.moveTo(wx, wy);
             c.lineTo(wx + (wx - aim.x), wy + (wy - aim.y));
             c.stroke();
+            c.setLineDash([]);
           }
           drawCircle(c, wx, wy, 12, '#f8fafc', '#cbd5e1');
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -233,11 +266,15 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         for (let c = 0; c < cols; c++) pegs.push({ x: offset + c * 52, y: 150 + r * 54 });
       }
       const balls: { x: number; y: number; vx: number; vy: number }[] = [];
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       let ammo = 15;
       let score = 0;
+      let lastDt = 0.016;
       const mults = [5, 20, 50, 100, 50, 20, 5];
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed && ammo > 0) {
             balls.push({ x: clamp(inp.x, 45, W - 45), y: 95, vx: rand(-25, 25), vy: 40 });
             ammo--;
@@ -263,14 +300,18 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
                 b.y = pg.y + ny * 16;
                 b.vx = nx * 140 + rand(-25, 25);
                 b.vy = -Math.abs(b.vy * 0.45);
+                spawnBurst(bursts, pg.x, pg.y, '#e2e8f0', 4, 0.35);
                 rt.sfx.tap();
               }
             }
             if (b.y >= 540) {
               const slot = clamp(Math.floor((b.x / W) * 7), 0, 6);
-              score += mults[slot];
+              const pts = mults[slot];
+              score += pts;
               rt.setScore(score);
               rt.sfx.score();
+              spawnBurst(bursts, b.x, 540, pts >= 50 ? '#fde047' : '#818cf8', pts >= 50 ? 14 : 8);
+              spawnPopup(popups, b.x, 520, `+${pts}`, pts >= 50 ? '#fde047' : '#fff', pts === 100 ? 20 : 16);
               balls.splice(i, 1);
             }
           }
@@ -283,14 +324,16 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1e1b4b', '#090d16');
+          drawGradientBg(c, '#1e1b4b', '#090d16', 'rgba(250,204,21,0.14)');
           for (const pg of pegs) drawCircle(c, pg.x, pg.y, 6, '#e2e8f0');
           const sw = W / 7;
           mults.forEach((m, i) => {
             drawRoundedBox(c, i * sw + 3, 540, sw - 6, 48, 8, m === 100 ? '#facc15' : '#6366f1');
             drawBadgeText(c, `${m}`, i * sw + sw / 2, 564, m === 100 ? '#000' : '#fff', 16);
           });
-          for (const b of balls) drawCircle(c, b.x, b.y, 9, '#fde047', '#fff');
+          for (const b of balls) drawCircle(c, b.x, b.y, 9, '#fde047', '#fff', '#facc15');
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -307,13 +350,17 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       let drag = false;
       let aim = { x: 140, y: 400 };
-      let dummy: { x: number; y: number; vx: number; vy: number } | null = null;
+      let dummy: { x: number; y: number; vx: number; vy: number; rot: number } | null = null;
       let hoop = { x: 220, y: 240, hit: false };
       let mat = { x: 330, y: 500 };
       let score = 0;
       let lives = 5;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (!dummy) {
             if (inp.down) {
               drag = true;
@@ -326,20 +373,27 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
                 y: 480,
                 vx: clamp((aim.x - 65) * 2.5, 90, 480),
                 vy: clamp((aim.y - 480) * 2.5, -580, -80),
+                rot: 0,
               };
+              spawnBurst(bursts, 72, 482, '#fb923c', 12);
               rt.sfx.tap();
             }
           } else {
             dummy.vy += 650 * dt;
             dummy.x += dummy.vx * dt;
             dummy.y += dummy.vy * dt;
+            dummy.rot += 7.5 * dt;
             if (!hoop.hit && Math.hypot(dummy.x - hoop.x, dummy.y - hoop.y) < 34) {
               hoop.hit = true;
               score += 50;
               rt.setScore(score);
               rt.sfx.score();
+              spawnBurst(bursts, hoop.x, hoop.y, '#22c55e', 12);
+              spawnPopup(popups, hoop.x, hoop.y - 16, 'HOOP! +50', '#4ade80');
             }
             if (dummy.y >= 490 && Math.abs(dummy.x - mat.x) < 48) {
+              spawnBurst(bursts, mat.x, 500, '#fde047', 16);
+              spawnPopup(popups, mat.x, 470, 'SAFE! +100', '#fde047', 19);
               score += 100;
               rt.setScore(score);
               rt.sfx.win();
@@ -362,18 +416,29 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
           const c = r.ctx;
           drawGradientBg(c, '#0ea5e9', '#1e293b');
           drawRoundedBox(c, 0, 520, W, 120, 0, '#334155');
-          drawCircle(c, hoop.x, hoop.y, 28, 'rgba(0,0,0,0)', hoop.hit ? '#22c55e' : '#facc15');
+          drawCircle(c, hoop.x, hoop.y, 28, 'rgba(0,0,0,0)', hoop.hit ? '#22c55e' : '#facc15', hoop.hit ? '#22c55e' : '#facc15');
           drawRoundedBox(c, mat.x - 42, 502, 84, 18, 6, '#ef4444', '#fff');
-          drawBadgeText(c, '💣', 65, 495, '#fff', 36);
+          drawRoundedBox(c, 42, 482, 44, 24, 10, '#1e293b', '#94a3b8');
+          drawCircle(c, 54, 512, 10, '#0f172a', '#cbd5e1');
           if (drag && !dummy) {
             c.strokeStyle = '#fde047';
             c.lineWidth = 3;
+            c.setLineDash([6, 4]);
             c.beginPath();
             c.moveTo(65, 480);
             c.lineTo(aim.x, aim.y);
             c.stroke();
+            c.setLineDash([]);
           }
-          if (dummy) drawBadgeText(c, '🤸', dummy.x, dummy.y, '#fff', 32);
+          if (dummy) {
+            c.save();
+            c.translate(dummy.x, dummy.y);
+            c.rotate(dummy.rot);
+            drawCharacterSprite(c, 0, 0, { style: 'knight', suitColor: '#ef4444', accentColor: '#fde047', action: 'jump', scale: 0.95 });
+            c.restore();
+          }
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
           drawLives(c, lives);
         },
       };
@@ -413,14 +478,14 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#0f172a', '#083344');
+          drawGradientBg(c, '#0f172a', '#083344', 'rgba(34,211,238,0.14)');
           const cx = W / 2;
           const cy = 360;
           c.save();
           c.translate(cx, cy);
           c.rotate(tilt);
-          drawRoundedBox(c, -155, -8, 310, 16, 8, '#38bdf8', '#fff');
-          drawCircle(c, ballPos * 145, -22, 16, '#facc15', '#fff');
+          drawRoundedBox(c, -155, -8, 310, 16, 8, '#38bdf8', '#fff', 'rgba(56,189,248,0.4)');
+          drawCircle(c, ballPos * 145, -22, 16, '#facc15', '#fff', '#facc15');
           c.restore();
           drawBadgeText(c, '🔺', cx, cy + 20, '#fff', 30);
         },
@@ -439,6 +504,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       const cols = ['#ef4444', '#38bdf8', '#22c55e', '#facc15'];
       const bubbles: { x: number; y: number; ci: number }[] = [];
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 7; c++) {
           bubbles.push({ x: 46 + c * 54, y: 100 + r * 44, ci: Math.floor(Math.random() * 4) });
@@ -447,8 +514,10 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
       let nextCi = Math.floor(Math.random() * 4);
       let shot: { x: number; y: number; vx: number; vy: number; ci: number } | null = null;
       let score = 0;
+      let lastDt = 0.016;
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (!shot && inp.justPressed && inp.y < 520) {
             const ang = Math.atan2(inp.y - 560, inp.x - W / 2);
             shot = { x: W / 2, y: 560, vx: Math.cos(ang) * 460, vy: Math.sin(ang) * 460, ci: nextCi };
@@ -458,7 +527,10 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
           if (shot) {
             shot.x += shot.vx * dt;
             shot.y += shot.vy * dt;
-            if (shot.x < 24 || shot.x > W - 24) shot.vx *= -1;
+            if (shot.x < 24 || shot.x > W - 24) {
+              shot.vx *= -1;
+              shot.x = clamp(shot.x, 24, W - 24);
+            }
             const hit = bubbles.find((b) => Math.hypot(b.x - shot!.x, b.y - shot!.y) < 34);
             if (hit || shot.y < 85) {
               const sx = shot.x;
@@ -466,12 +538,16 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               const sci = shot.ci;
               shot = null;
               if (hit && hit.ci === sci) {
+                let popped = 0;
                 for (let i = bubbles.length - 1; i >= 0; i--) {
                   if (bubbles[i].ci === sci && Math.hypot(bubbles[i].x - hit.x, bubbles[i].y - hit.y) < 88) {
+                    spawnBurst(bursts, bubbles[i].x, bubbles[i].y, cols[sci], 8);
                     bubbles.splice(i, 1);
                     score += 25;
+                    popped++;
                   }
                 }
+                if (popped > 0) spawnPopup(popups, hit.x, hit.y - 12, `+${popped * 25}`, cols[sci]);
                 rt.setScore(score);
                 rt.sfx.score();
               } else {
@@ -493,10 +569,12 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1e1b4b', '#090d16');
+          drawGradientBg(c, '#1e1b4b', '#090d16', 'rgba(236,72,153,0.14)');
           for (const b of bubbles) drawCircle(c, b.x, b.y, 19, cols[b.ci], '#fff');
-          if (shot) drawCircle(c, shot.x, shot.y, 17, cols[shot.ci], '#fff');
-          drawCircle(c, W / 2, 560, 20, cols[nextCi], '#fff');
+          if (shot) drawCircle(c, shot.x, shot.y, 17, cols[shot.ci], '#fff', cols[shot.ci]);
+          drawCircle(c, W / 2, 560, 20, cols[nextCi], '#fff', cols[nextCi]);
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -518,12 +596,16 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
       let goal = { x: 340, y: 120 };
       let score = 0;
       let t = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       let saws = [
         { x: 210, y: 360, r: 24 },
         { x: 160, y: 210, r: 24 },
       ];
       return {
         update(dt, inp) {
+          lastDt = dt;
           t += dt;
           if (inp.down) {
             const dx = inp.x - bx;
@@ -545,6 +627,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
             }
           }
           if (Math.hypot(bx - goal.x, by - goal.y) < 30) {
+            spawnBurst(bursts, goal.x, goal.y, '#22c55e', 14);
+            spawnPopup(popups, goal.x, goal.y - 14, '+100 🌀', '#4ade80');
             score += 100;
             rt.setScore(score);
             rt.sfx.win();
@@ -562,14 +646,20 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1e293b', '#090d16');
-          drawCircle(c, goal.x, goal.y, 26, '#22c55e', '#fff');
+          drawGradientBg(c, '#1e293b', '#090d16', 'rgba(239,68,68,0.12)');
+          drawCircle(c, goal.x, goal.y, 26, '#22c55e', '#fff', '#22c55e');
           drawBadgeText(c, '🌀', goal.x, goal.y, '#fff', 30);
           for (const s of saws) {
-            drawCircle(c, s.x, s.y, s.r, '#ef4444', '#fde047');
-            drawBadgeText(c, '⚙️', s.x, s.y, '#fff', 26);
+            drawCircle(c, s.x, s.y, s.r, '#ef4444', '#fde047', '#ef4444');
+            c.save();
+            c.translate(s.x, s.y);
+            c.rotate(t * 5);
+            drawBadgeText(c, '⚙️', 0, 0, '#fff', 26);
+            c.restore();
           }
-          drawCircle(c, bx, by, 14, '#cbd5e1', '#38bdf8');
+          drawCircle(c, bx, by, 14, '#cbd5e1', '#38bdf8', '#38bdf8');
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -590,6 +680,17 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         const empty = grid.map((v, i) => (v === 0 ? i : -1)).filter((i) => i >= 0);
         if (empty.length) grid[empty[Math.floor(Math.random() * empty.length)]] = Math.random() < 0.85 ? 2 : 4;
       };
+      const canMove = (): boolean => {
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 4; c++) {
+            const v = grid[r * 4 + c];
+            if (v === 0) return true;
+            if (c < 3 && grid[r * 4 + c + 1] === v) return true;
+            if (r < 3 && grid[(r + 1) * 4 + c] === v) return true;
+          }
+        }
+        return false;
+      };
       addTile();
       addTile();
       const slideLine = (vals: number[]) => {
@@ -609,13 +710,13 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
       const move = (dir: 'up' | 'down' | 'left' | 'right') => {
         const before = grid.join(',');
         for (let i = 0; i < 4; i++) {
-          let line: number[] = [];
+          const line: number[] = [];
           for (let j = 0; j < 4; j++) {
             const idx = dir === 'left' || dir === 'right' ? i * 4 + j : j * 4 + i;
             line.push(grid[idx]);
           }
           if (dir === 'right' || dir === 'down') line.reverse();
-          let out = slideLine(line);
+          const out = slideLine(line);
           if (dir === 'right' || dir === 'down') out.reverse();
           for (let j = 0; j < 4; j++) {
             const idx = dir === 'left' || dir === 'right' ? i * 4 + j : j * 4 + i;
@@ -626,7 +727,22 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
           addTile();
           rt.setScore(score);
           rt.sfx.score();
+          if (!canMove()) {
+            rt.sfx.hit();
+            rt.endGame(score, `No more moves! Final score: ${score}`);
+          }
         }
+      };
+      const tileColor = (v: number): string => {
+        if (v === 0) return '#44403c';
+        if (v === 2) return '#fef3c7';
+        if (v === 4) return '#fde68a';
+        if (v === 8) return '#fdba74';
+        if (v === 16) return '#fb923c';
+        if (v === 32) return '#f87171';
+        if (v === 64) return '#ef4444';
+        if (v === 128) return '#facc15';
+        return '#eab308';
       };
       return {
         update(_dt, inp) {
@@ -641,16 +757,15 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1c1917', '#090d16');
+          drawGradientBg(c, '#1c1917', '#090d16', 'rgba(245,158,11,0.14)');
           drawRoundedBox(c, 25, 130, 370, 370, 14, '#292524', '#78350f');
           for (let rIdx = 0; rIdx < 4; rIdx++) {
             for (let cIdx = 0; cIdx < 4; cIdx++) {
               const v = grid[rIdx * 4 + cIdx];
               const x = 38 + cIdx * 89;
               const y = 143 + rIdx * 89;
-              const fill = v === 0 ? '#44403c' : v >= 128 ? '#facc15' : v >= 16 ? '#fb923c' : '#fde68a';
-              drawRoundedBox(c, x, y, 80, 80, 10, fill);
-              if (v > 0) drawBadgeText(c, `${v}`, x + 40, y + 40, v >= 16 ? '#000' : '#1c1917', 24);
+              drawRoundedBox(c, x, y, 80, 80, 10, tileColor(v));
+              if (v > 0) drawBadgeText(c, `${v}`, x + 40, y + 40, v >= 16 && v < 128 ? '#fff' : '#1c1917', v >= 1024 ? 20 : 24);
             }
           }
         },
@@ -675,11 +790,32 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         [[0, 0], [1, 0], [0, 1]],
         [[0, 0], [1, 0], [2, 0]],
       ];
-      let hand = [0, 1, 3];
+      const hand = [0, 1, 3];
       let sel = 0;
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
+      const canPlaceShape = (cells: number[][]) => {
+        for (let gy = 0; gy < 6; gy++) {
+          for (let gx = 0; gx < 6; gx++) {
+            if (
+              cells.every(([dx, dy]) => {
+                const nx = gx + dx;
+                const ny = gy + dy;
+                return nx >= 0 && nx < 6 && ny >= 0 && ny < 6 && board[ny * 6 + nx] === 0;
+              })
+            ) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+      const canPlaceAny = () => hand.some((sIdx) => canPlaceShape(shapes[sIdx]));
       return {
-        update(_dt, inp) {
+        update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed) {
             if (inp.y > 470) {
               sel = clamp(Math.floor(inp.x / (W / 3)), 0, 2);
@@ -696,22 +832,35 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               if (ok) {
                 for (const [dx, dy] of cells) board[(gy + dy) * 6 + (gx + dx)] = 1;
                 score += cells.length * 10;
-                // clear full rows/cols
+                const fullRows: number[] = [];
+                const fullCols: number[] = [];
                 for (let r = 0; r < 6; r++) {
-                  if ([0, 1, 2, 3, 4, 5].every((c) => board[r * 6 + c])) {
-                    for (let c = 0; c < 6; c++) board[r * 6 + c] = 0;
-                    score += 60;
-                  }
+                  if ([0, 1, 2, 3, 4, 5].every((c) => board[r * 6 + c])) fullRows.push(r);
                 }
                 for (let c = 0; c < 6; c++) {
-                  if ([0, 1, 2, 3, 4, 5].every((r) => board[r * 6 + c])) {
-                    for (let r = 0; r < 6; r++) board[r * 6 + c] = 0;
-                    score += 60;
-                  }
+                  if ([0, 1, 2, 3, 4, 5].every((r) => board[r * 6 + c])) fullCols.push(c);
+                }
+                for (const r of fullRows) {
+                  for (let c = 0; c < 6; c++) board[r * 6 + c] = 0;
+                  score += 60;
+                  spawnBurst(bursts, W / 2, 135 + r * 55, '#fde047', 12);
+                }
+                for (const c of fullCols) {
+                  for (let r = 0; r < 6; r++) board[r * 6 + c] = 0;
+                  score += 60;
+                  spawnBurst(bursts, 70 + c * 55, 275, '#38bdf8', 12);
+                }
+                if (fullRows.length + fullCols.length > 0) {
+                  spawnPopup(popups, W / 2, 260, `CLEAR! +${(fullRows.length + fullCols.length) * 60}`, '#fde047', 20);
                 }
                 hand[sel] = Math.floor(Math.random() * shapes.length);
                 rt.setScore(score);
                 rt.sfx.score();
+                if (!canPlaceAny()) {
+                  rt.sfx.hit();
+                  rt.endGame(score, `No space left! Final score: ${score}`);
+                  return;
+                }
               } else rt.sfx.hit();
             }
           }
@@ -719,7 +868,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#0f172a', '#1e293b');
+          drawGradientBg(c, '#0f172a', '#1e293b', 'rgba(56,189,248,0.14)');
           for (let rI = 0; rI < 6; rI++) {
             for (let cI = 0; cI < 6; cI++) {
               drawRoundedBox(c, 45 + cI * 55, 110 + rI * 55, 50, 50, 8, board[rI * 6 + cI] ? '#38bdf8' : '#334155');
@@ -731,6 +880,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               drawRoundedBox(c, 52 + i * 130 + dx * 24, 505 + dy * 24, 20, 20, 4, '#facc15');
             }
           }
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -749,14 +900,21 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
       let tubes: number[][] = [];
       let selected: number | null = null;
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
+      const isSolved = (arr: number[][]) => arr.every((t) => t.length === 0 || (t.length === 3 && t.every((v) => v === t[0])));
       const makePuzzle = () => {
-        const pool = [0, 0, 0, 1, 1, 1, 2, 2, 2].sort(() => Math.random() - 0.5);
-        tubes = [pool.slice(0, 3), pool.slice(3, 6), pool.slice(6, 9), []];
+        do {
+          const pool = [0, 0, 0, 1, 1, 1, 2, 2, 2].sort(() => Math.random() - 0.5);
+          tubes = [pool.slice(0, 3), pool.slice(3, 6), pool.slice(6, 9), []];
+        } while (isSolved(tubes));
         selected = null;
       };
       makePuzzle();
       return {
-        update(_dt, inp) {
+        update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed) {
             const idx = clamp(Math.floor((inp.x - 20) / ((W - 40) / 4)), 0, 3);
             if (selected === null) {
@@ -770,8 +928,9 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
                 if (tubes[idx].length === 0 || tubes[idx][tubes[idx].length - 1] === top) {
                   tubes[idx].push(tubes[selected].pop() as number);
                   rt.sfx.score();
-                  const solved = tubes.every((t) => t.length === 0 || (t.length === 3 && t.every((v) => v === t[0])));
-                  if (solved) {
+                  if (isSolved(tubes)) {
+                    spawnBurst(bursts, W / 2, 320, '#2dd4bf', 18);
+                    spawnPopup(popups, W / 2, 180, 'SORTED! +100', '#5eead4', 22);
                     score += 100;
                     rt.setScore(score);
                     rt.sfx.win();
@@ -786,7 +945,7 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#042f2e', '#090d16');
+          drawGradientBg(c, '#042f2e', '#090d16', 'rgba(45,212,191,0.14)');
           tubes.forEach((t, idx) => {
             const bx = 46 + idx * 92;
             const by = selected === idx ? 215 : 235;
@@ -795,6 +954,8 @@ export const GROUP_07_PHYSICS: MiniGameDef[] = [
               drawRoundedBox(c, bx + 6, by + 135 - pos * 56, 44, 48, 8, palette[colIdx]);
             });
           });
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },

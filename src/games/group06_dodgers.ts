@@ -1,12 +1,23 @@
 import { H, MiniGameDef, MiniGameInstance, W } from '../types';
 import {
+  Burst,
   clamp,
   drawBadgeText,
+  drawCarSprite,
+  drawCharacterSprite,
   drawCircle,
+  drawGlowLine,
   drawGradientBg,
   drawLives,
   drawRoundedBox,
+  drawStarfield,
+  drawTrainSprite,
+  FloatingPopup,
   rand,
+  spawnBurst,
+  spawnPopup,
+  updateAndDrawBursts,
+  updateAndDrawPopups,
 } from '../game/engineHelpers';
 
 export const GROUP_06_DODGERS: MiniGameDef[] = [
@@ -23,10 +34,16 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
       let py = 540;
       let t = 0;
       let score = 0;
+      let sneaking = false;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const lasers = Array.from({ length: 4 }, (_, i) => ({ y: 120 + i * 105, period: 2.2 - i * 0.15, offset: i * 0.7 }));
       return {
         update(dt, inp) {
+          lastDt = dt;
           t += dt;
+          sneaking = inp.down;
           if (inp.down) py -= 160 * dt;
           for (const l of lasers) {
             const on = Math.sin(((t + l.offset) / l.period) * Math.PI * 2) > 0;
@@ -38,6 +55,8 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
           }
           if (py < 70) {
             score += 100;
+            spawnBurst(bursts, W / 2, 65, '#38bdf8', 16);
+            spawnPopup(popups, W / 2, 95, '+100 💎', '#fde047', 20);
             py = 540;
             rt.setScore(score);
             rt.sfx.win();
@@ -46,18 +65,31 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#090d16', '#1e293b');
+          drawGradientBg(c, '#090d16', '#1e293b', 'rgba(239,68,68,0.12)');
           drawBadgeText(c, '💎', W / 2, 65, '#fff', 36);
           for (const l of lasers) {
             const on = Math.sin(((t + l.offset) / l.period) * Math.PI * 2) > 0;
-            c.strokeStyle = on ? '#ef4444' : 'rgba(239,68,68,0.2)';
-            c.lineWidth = on ? 7 : 2;
-            c.beginPath();
-            c.moveTo(20, l.y);
-            c.lineTo(W - 20, l.y);
-            c.stroke();
+            if (on) {
+              drawGlowLine(c, 20, l.y, W - 20, l.y, '#ef4444', 6, '#ef4444');
+            } else {
+              c.strokeStyle = 'rgba(239,68,68,0.22)';
+              c.lineWidth = 2;
+              c.beginPath();
+              c.moveTo(20, l.y);
+              c.lineTo(W - 20, l.y);
+              c.stroke();
+            }
           }
-          drawBadgeText(c, '🥷', W / 2, py, '#fff', 34);
+          drawCharacterSprite(c, W / 2, py, {
+            style: 'ninja',
+            suitColor: '#1e293b',
+            accentColor: '#ef4444',
+            stride: sneaking ? py * 0.25 : 0,
+            action: sneaking ? 'idle' : 'guard',
+            scale: 1.05,
+          });
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -74,10 +106,13 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       let nsGreen = true;
       let score = 0;
+      let lastDt = 0.016;
       const cars: { axis: 'ns' | 'ew'; pos: number; spd: number }[] = [];
+      const popups: FloatingPopup[] = [];
       let spawnT = 0.5;
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed) {
             nsGreen = !nsGreen;
             rt.sfx.tap();
@@ -87,7 +122,6 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             cars.push({ axis: Math.random() < 0.5 ? 'ns' : 'ew', pos: -30, spd: 145 + score * 0.3 });
             spawnT = Math.max(0.45, 1.0 - score * 0.002);
           }
-          const stopLine = 240;
           for (let i = cars.length - 1; i >= 0; i--) {
             const cCar = cars[i];
             const isGreen = cCar.axis === 'ns' ? nsGreen : !nsGreen;
@@ -101,11 +135,12 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
               score += 10;
               rt.setScore(score);
               rt.sfx.score();
+              spawnPopup(popups, cCar.axis === 'ns' ? W / 2 : W - 40, cCar.axis === 'ns' ? H - 45 : H / 2, '+10', '#4ade80', 14);
             }
           }
           const inBoxNS = cars.some((cCar) => cCar.axis === 'ns' && Math.abs(cCar.pos - H / 2) < 30);
           const inBoxEW = cars.some((cCar) => cCar.axis === 'ew' && Math.abs(cCar.pos - W / 2) < 30);
-          if (inBoxNS && inBoxEW && stopLine > 0) {
+          if (inBoxNS && inBoxEW) {
             rt.sfx.explode();
             rt.endGame(score, `Intersection crash at ${score} pt!`);
             return;
@@ -117,13 +152,22 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
           drawGradientBg(c, '#14532d', '#064e3b');
           drawRoundedBox(c, W / 2 - 42, 0, 84, H, 0, '#334155');
           drawRoundedBox(c, 0, H / 2 - 42, W, 84, 0, '#334155');
-          drawCircle(c, W / 2, H / 2 - 70, 12, nsGreen ? '#22c55e' : '#ef4444');
-          drawCircle(c, W / 2 - 70, H / 2, 12, !nsGreen ? '#22c55e' : '#ef4444');
+          drawCircle(c, W / 2, H / 2 - 70, 12, nsGreen ? '#22c55e' : '#ef4444', '#fff', nsGreen ? '#22c55e' : '#ef4444');
+          drawCircle(c, W / 2 - 70, H / 2, 12, !nsGreen ? '#22c55e' : '#ef4444', '#fff', !nsGreen ? '#22c55e' : '#ef4444');
           for (const cCar of cars) {
             const x = cCar.axis === 'ns' ? W / 2 : cCar.pos;
             const y = cCar.axis === 'ns' ? cCar.pos : H / 2;
-            drawBadgeText(c, cCar.axis === 'ns' ? '🚗' : '🚕', x, y, '#fff', 28);
+            drawCarSprite(
+              c,
+              x,
+              y,
+              cCar.axis === 'ns' ? Math.PI : Math.PI / 2,
+              cCar.axis === 'ns' ? '#ef4444' : '#facc15',
+              cCar.axis === 'ns' ? '#f8fafc' : '#0f172a',
+              { taxi: cCar.axis === 'ew', headlights: true, scale: 0.9 }
+            );
           }
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -140,10 +184,12 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       let px = W / 2;
       let score = 0;
+      let time = 0;
       let spawnT = 0.3;
       const meteors: { x: number; y: number; r: number; spd: number }[] = [];
       return {
         update(dt, inp) {
+          time += dt;
           if (inp.down) px = clamp(inp.x, 24, W - 24);
           score += Math.round(dt * 15);
           rt.setScore(score);
@@ -166,11 +212,18 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1c1917', '#450a0a');
+          drawGradientBg(c, '#1c1917', '#450a0a', 'rgba(249,115,22,0.16)');
+          drawStarfield(c, time, 28, 30);
           for (const m of meteors) {
-            drawCircle(c, m.x, m.y, m.r, '#ea580c', '#fde047');
+            drawCircle(c, m.x, m.y, m.r, '#ea580c', '#fde047', '#f97316');
           }
-          drawBadgeText(c, '🧑‍🚀', px, 545, '#fff', 36);
+          drawCharacterSprite(c, px, 545, {
+            style: 'astronaut',
+            suitColor: '#f8fafc',
+            accentColor: '#f97316',
+            stride: time * 12,
+            scale: 1.15,
+          });
         },
       };
     },
@@ -187,10 +240,12 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       let lane = 1;
       let score = 0;
+      let time = 0;
       const laneX = (l: number) => 85 + l * 125;
       const bags = Array.from({ length: 5 }, (_, i) => ({ lane: i % 3, y: -i * 130, spd: 230 }));
       return {
         update(dt, inp) {
+          time += dt;
           if (inp.justPressed) {
             lane = clamp(Math.floor(inp.x / (W / 3)), 0, 2);
             rt.sfx.tap();
@@ -205,18 +260,27 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
               return;
             }
             if (b.y > H + 30) {
-              b.y = -40;
-              b.lane = Math.floor(Math.random() * 3);
+              const newY = -40;
+              const blockedLanes = new Set(bags.filter((o) => o !== b && o.y < 70).map((o) => o.lane));
+              const openLanes = [0, 1, 2].filter((l) => !blockedLanes.has(l));
+              b.y = newY;
+              b.lane = openLanes.length > 0 ? openLanes[Math.floor(Math.random() * openLanes.length)] : Math.floor(Math.random() * 3);
             }
           }
           rt.setStatus(`Escalator sprint: ${score}m`);
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1e293b', '#0f172a');
+          drawGradientBg(c, '#1e293b', '#0f172a', 'rgba(99,102,241,0.14)');
           for (let l = 0; l < 3; l++) drawRoundedBox(c, laneX(l) - 38, 0, 76, H, 0, '#334155', '#64748b');
           for (const b of bags) drawBadgeText(c, '🧳', laneX(b.lane), b.y, '#fff', 32);
-          drawBadgeText(c, '🏃', laneX(lane), 520, '#fff', 36);
+          drawCharacterSprite(c, laneX(lane), 520, {
+            style: 'runner',
+            suitColor: '#6366f1',
+            accentColor: '#fde047',
+            stride: time * 14,
+            scale: 1.15,
+          });
         },
       };
     },
@@ -237,12 +301,16 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
       let pvy = 0;
       let radius = 180;
       let score = 0;
-      let bots = [
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
+      const bots = [
         { x: W / 2 - 70, y: 260, vx: 30, vy: 20 },
         { x: W / 2 + 70, y: 260, vx: -30, vy: 25 },
       ];
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (inp.justReleased) {
             pvx += clamp((inp.startX - inp.x) * 2.4, -360, 360);
             pvy += clamp((inp.startY - inp.y) * 2.4, -360, 360);
@@ -271,9 +339,12 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
               b.vy -= ny * 240;
               pvx += nx * 130;
               pvy += ny * 130;
+              spawnBurst(bursts, (px + b.x) / 2, (py + b.y) / 2, '#fde047', 10);
               rt.sfx.hit();
             }
             if (Math.hypot(b.x - W / 2, b.y - 330) > radius) {
+              spawnBurst(bursts, b.x, b.y, '#38bdf8', 16);
+              spawnPopup(popups, b.x, b.y - 12, 'KNOCKOUT! +100', '#fde047', 18);
               score += 100;
               radius = Math.min(180, radius + 15);
               rt.setScore(score);
@@ -293,10 +364,15 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#0369a1', '#090d16');
-          drawCircle(c, W / 2, 330, radius, '#bae6fd', '#fff');
-          for (const b of bots) drawBadgeText(c, '🚙', b.x, b.y, '#fff', 32);
-          drawBadgeText(c, '🚗', px, py, '#fff', 34);
+          drawGradientBg(c, '#0369a1', '#090d16', 'rgba(56,189,248,0.16)');
+          drawCircle(c, W / 2, 330, radius, '#bae6fd', '#fff', 'rgba(56,189,248,0.3)');
+          for (const b of bots) {
+            drawCarSprite(c, b.x, b.y, Math.atan2(b.vy, b.vx) + Math.PI / 2, '#ef4444', '#fde047', { bumper: true, scale: 1.05 });
+          }
+          const pAng = Math.hypot(pvx, pvy) > 5 ? Math.atan2(pvy, pvx) + Math.PI / 2 : 0;
+          drawCarSprite(c, px, py, pAng, '#38bdf8', '#f8fafc', { bumper: true, scale: 1.1 });
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -314,10 +390,14 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
       let switchRight = false;
       let score = 0;
       let lives = 3;
+      let lastDt = 0.016;
       const trains: { y: number; targetRight: boolean }[] = [{ y: 60, targetRight: false }];
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       let spawnT = 1.6;
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed) {
             switchRight = !switchRight;
             rt.sfx.tap();
@@ -331,11 +411,15 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             trains[i].y += (140 + score * 0.25) * dt;
             if (trains[i].y >= 380) {
               const t = trains.splice(i, 1)[0];
+              const sx = switchRight ? 260 : 160;
               if (t.targetRight === switchRight) {
                 score += 25;
                 rt.setScore(score);
                 rt.sfx.score();
+                spawnBurst(bursts, sx, 430, switchRight ? '#38bdf8' : '#ef4444', 10);
+                spawnPopup(popups, sx, 410, '+25', '#fde047', 16);
               } else {
+                spawnBurst(bursts, sx, 430, '#ef4444', 12);
                 lives--;
                 rt.sfx.hit();
                 if (lives <= 0) {
@@ -349,7 +433,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1e293b', '#064e3b');
+          drawGradientBg(c, '#1e293b', '#064e3b', 'rgba(234,179,8,0.12)');
           c.strokeStyle = '#94a3b8';
           c.lineWidth = 8;
           c.beginPath();
@@ -360,19 +444,16 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
           c.lineTo(310, 460);
           c.stroke();
 
-          c.strokeStyle = '#facc15';
-          c.lineWidth = 10;
-          c.beginPath();
-          c.moveTo(W / 2, 300);
-          c.lineTo(switchRight ? 310 : 110, 460);
-          c.stroke();
+          drawGlowLine(c, W / 2, 300, switchRight ? 310 : 110, 460, '#facc15', 10, '#facc15');
 
           drawBadgeText(c, '🔴 Station', 110, 495, '#ef4444', 18);
           drawBadgeText(c, '🔵 Station', 310, 495, '#38bdf8', 18);
           for (const t of trains) {
             const x = t.y < 300 ? W / 2 : W / 2 + ((t.y - 300) / 160) * (switchRight ? 100 : -100);
-            drawBadgeText(c, t.targetRight ? '🚆🔵' : '🚂🔴', x, t.y, '#fff', 28);
+            drawTrainSprite(c, x, t.y, t.targetRight ? '#0284c7' : '#dc2626', t.targetRight ? '#bae6fd' : '#fde047');
           }
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
           drawLives(c, lives);
         },
       };
@@ -390,11 +471,17 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       let px = W / 2;
       let score = 0;
+      let time = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
       const trees = Array.from({ length: 7 }, (_, i) => ({ x: rand(35, W - 35), y: 200 + i * 90 }));
       return {
         update(dt, inp) {
+          lastDt = dt;
+          time += dt;
           if (inp.down) px = clamp(inp.x, 22, W - 22);
           const spd = 230 + score * 0.5;
+          if (Math.random() < 0.35) spawnBurst(bursts, px, 208, '#fff', 2, 0.3);
           score += Math.round(dt * 18);
           rt.setScore(score);
           for (const tr of trees) {
@@ -416,7 +503,14 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
           drawGradientBg(c, '#f8fafc', '#bae6fd');
           drawRoundedBox(c, 0, 0, W, 90, 0, '#e2e8f0');
           drawBadgeText(c, '❄️ AVALANCHE ❄️', W / 2, 55, '#0369a1', 18);
-          drawBadgeText(c, '⛷️', px, 220, '#fff', 34);
+          updateAndDrawBursts(c, bursts, lastDt);
+          drawCharacterSprite(c, px, 220, {
+            style: 'skier',
+            suitColor: '#ef4444',
+            accentColor: '#38bdf8',
+            stride: time * 10,
+            scale: 1.1,
+          });
           for (const tr of trees) drawBadgeText(c, '🌲', tr.x, tr.y, '#fff', 34);
         },
       };
@@ -436,25 +530,30 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
       let ballCount = 5;
       let score = 0;
       let aimAng = -Math.PI / 2;
+      let lastDt = 0.016;
       const activeBalls: { x: number; y: number; vx: number; vy: number }[] = [];
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       let queue = 0;
       let queueT = 0;
       const blocks: { x: number; y: number; hp: number }[] = [];
-      const addRow = () => {
+      const addRow = (): boolean => {
         for (const b of blocks) b.y += 52;
         if (blocks.some((b) => b.y > 515)) {
           rt.sfx.explode();
           rt.endGame(score, `Blocks reached the bottom! Score: ${score}`);
-          return;
+          return true;
         }
         const lvl = Math.max(2, Math.floor(score / 40) + 2);
         for (let c = 0; c < 6; c++) {
           if (Math.random() < 0.65) blocks.push({ x: 35 + c * 62, y: 95, hp: rand(lvl, lvl + 4) | 0 });
         }
+        return false;
       };
       addRow();
       return {
         update(dt, inp) {
+          lastDt = dt;
           if (activeBalls.length === 0 && queue === 0) {
             if (inp.down) aimAng = clamp(Math.atan2(inp.y - 575, inp.x - shootX), -Math.PI + 0.2, -0.2);
             if (inp.justReleased) {
@@ -480,18 +579,43 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
               b.x = clamp(b.x, 12, W - 12);
             }
             if (b.y < 60) {
-              b.vy *= -1;
+              b.vy = Math.abs(b.vy);
               b.y = 60;
             }
             for (let j = blocks.length - 1; j >= 0; j--) {
               const bl = blocks[j];
-              if (b.x > bl.x - 6 && b.x < bl.x + 56 && b.y > bl.y - 6 && b.y < bl.y + 42) {
-                b.vy *= -1;
+              const left = bl.x - 6;
+              const right = bl.x + 56;
+              const top = bl.y - 6;
+              const bottom = bl.y + 42;
+              if (b.x > left && b.x < right && b.y > top && b.y < bottom) {
+                const overlapL = b.x - left;
+                const overlapR = right - b.x;
+                const overlapT = b.y - top;
+                const overlapB = bottom - b.y;
+                const minOverlap = Math.min(overlapL, overlapR, overlapT, overlapB);
+                if (minOverlap === overlapL) {
+                  b.x = left;
+                  b.vx = -Math.abs(b.vx);
+                } else if (minOverlap === overlapR) {
+                  b.x = right;
+                  b.vx = Math.abs(b.vx);
+                } else if (minOverlap === overlapT) {
+                  b.y = top;
+                  b.vy = -Math.abs(b.vy);
+                } else {
+                  b.y = bottom;
+                  b.vy = Math.abs(b.vy);
+                }
+                if (Math.abs(b.vy) < 45) b.vy = (b.vy >= 0 ? 1 : -1) * 45;
                 bl.hp--;
                 score += 5;
                 rt.setScore(score);
                 rt.sfx.score();
+                spawnBurst(bursts, b.x, b.y, '#f472b6', 5, 0.5);
                 if (bl.hp <= 0) {
+                  spawnBurst(bursts, bl.x + 25, bl.y + 18, '#fde047', 12);
+                  spawnPopup(popups, bl.x + 25, bl.y, '+BALL', '#38bdf8', 14);
                   blocks.splice(j, 1);
                   ballCount = Math.min(24, ballCount + 1);
                 }
@@ -501,16 +625,19 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             if (b.y > 585) {
               shootX = clamp(b.x, 30, W - 30);
               activeBalls.splice(i, 1);
-              if (activeBalls.length === 0 && queue === 0) addRow();
+              if (activeBalls.length === 0 && queue === 0) {
+                if (addRow()) return;
+              }
             }
           }
           rt.setStatus(`Balls: ${ballCount} · Aim upward!`);
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#090d16', '#1e293b');
+          drawGradientBg(c, '#090d16', '#1e293b', 'rgba(244,63,94,0.14)');
           for (const bl of blocks) {
-            drawRoundedBox(c, bl.x, bl.y, 50, 36, 7, '#ec4899', '#fff');
+            const col = bl.hp >= 12 ? '#ef4444' : bl.hp >= 6 ? '#ec4899' : '#a855f7';
+            drawRoundedBox(c, bl.x, bl.y, 50, 36, 7, col, '#fff');
             drawBadgeText(c, `${bl.hp}`, bl.x + 25, bl.y + 18, '#fff', 15);
           }
           if (activeBalls.length === 0) {
@@ -522,8 +649,10 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             c.stroke();
             c.setLineDash([]);
           }
-          for (const b of activeBalls) drawCircle(c, b.x, b.y, 7, '#fde047');
-          drawCircle(c, shootX, 575, 9, '#38bdf8', '#fff');
+          for (const b of activeBalls) drawCircle(c, b.x, b.y, 7, '#fde047', undefined, '#facc15');
+          drawCircle(c, shootX, 575, 9, '#38bdf8', '#fff', '#38bdf8');
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -546,13 +675,17 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
       let rightUp = 0;
       let score = 0;
       let balls = 3;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const bumpers = [
-        { x: 130, y: 210, r: 26 },
-        { x: 290, y: 210, r: 26 },
-        { x: 210, y: 310, r: 24 },
+        { x: 130, y: 210, r: 26, flash: 0 },
+        { x: 290, y: 210, r: 26, flash: 0 },
+        { x: 210, y: 310, r: 24, flash: 0 },
       ];
       return {
         update(dt, inp) {
+          lastDt = dt;
           leftUp = inp.down && inp.x < W / 2 ? 1 : Math.max(0, leftUp - dt * 5);
           rightUp = inp.down && inp.x >= W / 2 ? 1 : Math.max(0, rightUp - dt * 5);
           vy += 420 * dt;
@@ -567,17 +700,23 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
             by = 70;
           }
           for (const bm of bumpers) {
+            if (bm.flash > 0) bm.flash -= dt;
             const dx = bx - bm.x;
             const dy = by - bm.y;
             const d = Math.hypot(dx, dy);
             if (d < bm.r + 12) {
               const nx = dx / Math.max(1, d);
               const ny = dy / Math.max(1, d);
+              bx = bm.x + nx * (bm.r + 13);
+              by = bm.y + ny * (bm.r + 13);
               vx = nx * 360;
               vy = ny * 360;
+              bm.flash = 0.2;
               score += 50;
               rt.setScore(score);
               rt.sfx.score();
+              spawnBurst(bursts, bm.x + nx * bm.r, bm.y + ny * bm.r, '#fde047', 10);
+              spawnPopup(popups, bm.x, bm.y - bm.r - 10, '+50', '#fde047', 16);
             }
           }
           // Flippers zone around y=545
@@ -608,18 +747,16 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#31102f', '#090d16');
-          for (const bm of bumpers) drawCircle(c, bm.x, bm.y, bm.r, '#ec4899', '#fde047');
-          c.strokeStyle = '#38bdf8';
-          c.lineWidth = 12;
-          c.lineCap = 'round';
-          c.beginPath();
-          c.moveTo(85, 540);
-          c.lineTo(185, leftUp > 0.2 ? 505 : 560);
-          c.moveTo(335, 540);
-          c.lineTo(235, rightUp > 0.2 ? 505 : 560);
-          c.stroke();
-          drawCircle(c, bx, by, 11, '#f8fafc', '#fde047');
+          drawGradientBg(c, '#31102f', '#090d16', 'rgba(168,85,247,0.16)');
+          for (const bm of bumpers) {
+            const lit = bm.flash > 0;
+            drawCircle(c, bm.x, bm.y, bm.r + (lit ? 3 : 0), lit ? '#fde047' : '#ec4899', '#fff', lit ? '#fde047' : '#ec4899');
+          }
+          drawGlowLine(c, 85, 540, 185, leftUp > 0.2 ? 505 : 560, '#38bdf8', 12, '#38bdf8');
+          drawGlowLine(c, 335, 540, 235, rightUp > 0.2 ? 505 : 560, '#38bdf8', 12, '#38bdf8');
+          drawCircle(c, bx, by, 11, '#f8fafc', '#fde047', '#fde047');
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
           drawLives(c, balls);
         },
       };
@@ -645,6 +782,9 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
       let score = 0;
       let drag = false;
       let aim = { x: bx, y: by };
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const nextHole = () => {
         holeNum++;
         bx = rand(90, W - 90);
@@ -656,6 +796,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
       };
       return {
         update(dt, inp) {
+          lastDt = dt;
           const moving = Math.hypot(vx, vy) > 10;
           if (!moving) {
             if (inp.down) {
@@ -681,12 +822,34 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
               vy *= -0.85;
               by = clamp(by, 70, H - 30);
             }
-            if (bx > wall.x - 8 && bx < wall.x + wall.w + 8 && by > wall.y - 8 && by < wall.y + wall.h + 8) {
-              vy *= -0.9;
-              by = vy > 0 ? wall.y + wall.h + 10 : wall.y - 10;
+            const left = wall.x - 9;
+            const right = wall.x + wall.w + 9;
+            const top = wall.y - 9;
+            const bottom = wall.y + wall.h + 9;
+            if (bx > left && bx < right && by > top && by < bottom) {
+              const overlapL = bx - left;
+              const overlapR = right - bx;
+              const overlapT = by - top;
+              const overlapB = bottom - by;
+              const minOverlap = Math.min(overlapL, overlapR, overlapT, overlapB);
+              if (minOverlap === overlapL) {
+                bx = left;
+                vx = -Math.abs(vx) * 0.9;
+              } else if (minOverlap === overlapR) {
+                bx = right;
+                vx = Math.abs(vx) * 0.9;
+              } else if (minOverlap === overlapT) {
+                by = top;
+                vy = -Math.abs(vy) * 0.9;
+              } else {
+                by = bottom;
+                vy = Math.abs(vy) * 0.9;
+              }
               rt.sfx.tap();
             }
             if (Math.hypot(bx - hole.x, by - hole.y) < 18 && Math.hypot(vx, vy) < 280) {
+              spawnBurst(bursts, hole.x, hole.y, '#fde047', 16);
+              spawnPopup(popups, hole.x, hole.y - 18, '+100 ⛳', '#fde047', 20);
               score += 100;
               rt.setScore(score);
               rt.sfx.win();
@@ -697,7 +860,7 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#15803d', '#14532d');
+          drawGradientBg(c, '#15803d', '#14532d', 'rgba(34,197,94,0.16)');
           drawRoundedBox(c, 20, 60, W - 40, H - 80, 16, '#22c55e', '#bef264');
           drawCircle(c, hole.x, hole.y, 16, '#090d16', '#fde047');
           drawBadgeText(c, '🚩', hole.x + 8, hole.y - 16, '#fff', 22);
@@ -705,12 +868,16 @@ export const GROUP_06_DODGERS: MiniGameDef[] = [
           if (drag) {
             c.strokeStyle = '#fde047';
             c.lineWidth = 3;
+            c.setLineDash([6, 4]);
             c.beginPath();
             c.moveTo(bx, by);
             c.lineTo(bx + (bx - aim.x), by + (by - aim.y));
             c.stroke();
+            c.setLineDash([]);
           }
           drawCircle(c, bx, by, 10, '#fff', '#cbd5e1');
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },

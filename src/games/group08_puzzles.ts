@@ -1,10 +1,19 @@
 import { MiniGameDef, MiniGameInstance, W } from '../types';
 import {
+  Burst,
   clamp,
   drawBadgeText,
+  drawCarSprite,
+  drawCharacterSprite,
   drawCircle,
+  drawGlowLine,
   drawGradientBg,
   drawRoundedBox,
+  FloatingPopup,
+  spawnBurst,
+  spawnPopup,
+  updateAndDrawBursts,
+  updateAndDrawPopups,
 } from '../game/engineHelpers';
 
 export const GROUP_08_PUZZLES: MiniGameDef[] = [
@@ -20,9 +29,12 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       let flagMode = false;
       let score = 0;
+      let lastDt = 0.016;
       let mines: boolean[] = [];
       let rev: boolean[] = [];
       let flags: boolean[] = [];
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const init = () => {
         mines = Array(36).fill(false);
         rev = Array(36).fill(false);
@@ -50,8 +62,34 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
         }
         return cnt;
       };
+      const revealCell = (startIdx: number) => {
+        const queue = [startIdx];
+        let newlyRevealed = 0;
+        while (queue.length > 0) {
+          const idx = queue.shift() as number;
+          if (rev[idx] || mines[idx] || flags[idx]) continue;
+          rev[idx] = true;
+          newlyRevealed++;
+          if (countAdj(idx) === 0) {
+            const r = Math.floor(idx / 6);
+            const c = idx % 6;
+            for (let dr = -1; dr <= 1; dr++) {
+              for (let dc = -1; dc <= 1; dc++) {
+                const nr = r + dr;
+                const nc = c + dc;
+                if (nr >= 0 && nr < 6 && nc >= 0 && nc < 6) {
+                  const nIdx = nr * 6 + nc;
+                  if (!rev[nIdx] && !mines[nIdx]) queue.push(nIdx);
+                }
+              }
+            }
+          }
+        }
+        return newlyRevealed;
+      };
       return {
-        update(_dt, inp) {
+        update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed) {
             if (inp.y > 495) {
               flagMode = !flagMode;
@@ -63,22 +101,35 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
             if (c >= 0 && c < 6 && r >= 0 && r < 6) {
               const i = r * 6 + c;
               if (flagMode) {
-                flags[i] = !flags[i];
-                rt.sfx.tap();
+                if (!rev[i]) {
+                  flags[i] = !flags[i];
+                  rt.sfx.tap();
+                }
               } else if (!flags[i] && !rev[i]) {
+                // First-click safety guarantee
+                if (mines[i] && rev.every((v) => !v)) {
+                  const safeSlot = mines.findIndex((m, idx) => !m && idx !== i);
+                  if (safeSlot >= 0) {
+                    mines[i] = false;
+                    mines[safeSlot] = true;
+                  }
+                }
                 if (mines[i]) {
                   rt.sfx.explode();
                   rt.endGame(score, `BOOM! Hit a mine at ${score} pt!`);
                   return;
                 }
-                rev[i] = true;
-                score += 15;
+                const count = revealCell(i);
+                const pts = count * 15;
+                score += pts;
                 rt.setScore(score);
                 rt.sfx.score();
+                spawnBurst(bursts, 45 + c * 55 + 25, 120 + r * 55 + 25, '#38bdf8', 8, 0.55);
                 if (rev.filter(Boolean).length === 30) {
                   score += 100;
                   rt.setScore(score);
                   rt.sfx.win();
+                  spawnPopup(popups, W / 2, 100, 'BOARD CLEAR! +100', '#4ade80', 20);
                   init();
                 }
               }
@@ -97,7 +148,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               drawRoundedBox(c, x, y, 50, 50, 8, rev[i] ? '#0f172a' : '#475569', '#94a3b8');
               if (rev[i]) {
                 const n = countAdj(i);
-                if (n > 0) drawBadgeText(c, `${n}`, x + 25, y + 25, '#fde047', 20);
+                if (n > 0) drawBadgeText(c, `${n}`, x + 25, y + 25, n === 1 ? '#38bdf8' : n === 2 ? '#4ade80' : '#fde047', 20);
               } else if (flags[i]) {
                 drawBadgeText(c, '🚩', x + 25, y + 25, '#fff', 22);
               }
@@ -105,6 +156,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
           }
           drawRoundedBox(c, 90, 515, 240, 52, 14, flagMode ? '#ef4444' : '#334155', '#fff');
           drawBadgeText(c, flagMode ? '🚩 Flagging (Tap=Switch)' : '⛏️ Digging (Tap=Flag)', W / 2, 541, '#fff', 16);
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -119,21 +172,44 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     controlsHint: 'Drag from a colored dot to its matching pair to connect pipes!',
     desc: 'Connect all matching color pairs across the grid.',
     create(rt): MiniGameInstance {
-      const pairs = [
-        { a: [0, 0], b: [4, 1], color: '#ef4444' },
-        { a: [0, 4], b: [3, 3], color: '#38bdf8' },
-        { a: [1, 2], b: [4, 4], color: '#facc15' },
+      const levels = [
+        [
+          { a: [0, 0], b: [4, 1], color: '#ef4444' },
+          { a: [0, 4], b: [3, 3], color: '#38bdf8' },
+          { a: [1, 2], b: [4, 4], color: '#facc15' },
+        ],
+        [
+          { a: [0, 1], b: [3, 0], color: '#ef4444' },
+          { a: [1, 1], b: [4, 3], color: '#38bdf8' },
+          { a: [0, 4], b: [4, 4], color: '#facc15' },
+        ],
+        [
+          { a: [0, 0], b: [2, 3], color: '#ef4444' },
+          { a: [4, 0], b: [1, 4], color: '#38bdf8' },
+          { a: [3, 2], b: [4, 4], color: '#facc15' },
+        ],
+        [
+          { a: [1, 0], b: [4, 2], color: '#ef4444' },
+          { a: [0, 2], b: [2, 4], color: '#38bdf8' },
+          { a: [2, 1], b: [4, 4], color: '#facc15' },
+        ],
       ];
+      let levelIdx = 0;
+      let pairs = levels[0].map((p) => ({ a: [...p.a], b: [...p.b], color: p.color }));
       let paths: [number, number][][] = pairs.map((p) => [p.a as [number, number]]);
       let activeIdx: number | null = null;
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const toCell = (x: number, y: number): [number, number] | null => {
         const cx = Math.floor((x - 45) / 66);
         const cy = Math.floor((y - 140) / 66);
         return cx >= 0 && cx < 5 && cy >= 0 && cy < 5 ? [cx, cy] : null;
       };
       return {
-        update(_dt, inp) {
+        update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed) {
             const cell = toCell(inp.x, inp.y);
             if (cell) {
@@ -148,8 +224,13 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
             const cell = toCell(inp.x, inp.y);
             const cur = paths[activeIdx];
             const last = cur[cur.length - 1];
-            if (cell && (Math.abs(cell[0] - last[0]) + Math.abs(cell[1] - last[1]) === 1)) {
-              if (!cur.some((c) => c[0] === cell[0] && c[1] === cell[1])) {
+            if (cell && Math.abs(cell[0] - last[0]) + Math.abs(cell[1] - last[1]) === 1) {
+              const otherEndpoint = pairs.some(
+                (p, idx) =>
+                  idx !== activeIdx &&
+                  ((p.a[0] === cell[0] && p.a[1] === cell[1]) || (p.b[0] === cell[0] && p.b[1] === cell[1]))
+              );
+              if (!otherEndpoint && !cur.some((c) => c[0] === cell[0] && c[1] === cell[1])) {
                 cur.push(cell);
                 rt.sfx.tap();
               }
@@ -162,46 +243,45 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               const start = pt[0];
               const end = pt[pt.length - 1];
               return (
-                ((start[0] === p.a[0] && start[1] === p.a[1]) && (end[0] === p.b[0] && end[1] === p.b[1])) ||
-                ((start[0] === p.b[0] && start[1] === p.b[1]) && (end[0] === p.a[0] && end[1] === p.a[1]))
+                (start[0] === p.a[0] && start[1] === p.a[1] && end[0] === p.b[0] && end[1] === p.b[1]) ||
+                (start[0] === p.b[0] && start[1] === p.b[1] && end[0] === p.a[0] && end[1] === p.a[1])
               );
             });
             if (allDone) {
+              spawnBurst(bursts, W / 2, 300, '#22c55e', 18);
+              spawnPopup(popups, W / 2, 120, 'FLOW COMPLETE! +100', '#4ade80', 20);
               score += 100;
               rt.setScore(score);
               rt.sfx.win();
-              pairs.forEach((p) => {
-                p.a = [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
-                p.b = [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
-              });
+              levelIdx = (levelIdx + 1) % levels.length;
+              pairs = levels[levelIdx].map((p) => ({ a: [...p.a], b: [...p.b], color: p.color }));
               paths = pairs.map((p) => [p.a as [number, number]]);
             }
           }
-          rt.setStatus('Drag each color to its matching dot');
+          rt.setStatus(`Level ${Math.floor(score / 100) + 1} · Drag matching dots`);
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#090d16', '#1e293b');
+          drawGradientBg(c, '#090d16', '#1e293b', 'rgba(34,197,94,0.12)');
           for (let y = 0; y < 5; y++) {
             for (let x = 0; x < 5; x++) {
               drawRoundedBox(c, 45 + x * 66, 140 + y * 66, 62, 62, 10, '#1e293b', '#334155');
             }
           }
           pairs.forEach((p, idx) => {
-            c.strokeStyle = p.color;
-            c.lineWidth = 14;
-            c.lineCap = 'round';
-            c.beginPath();
-            paths[idx].forEach(([cx, cy], i) => {
-              const px = 45 + cx * 66 + 31;
-              const py = 140 + cy * 66 + 31;
-              if (i === 0) c.moveTo(px, py);
-              else c.lineTo(px, py);
-            });
-            c.stroke();
-            drawCircle(c, 45 + p.a[0] * 66 + 31, 140 + p.a[1] * 66 + 31, 18, p.color, '#fff');
-            drawCircle(c, 45 + p.b[0] * 66 + 31, 140 + p.b[1] * 66 + 31, 18, p.color, '#fff');
+            const pts = paths[idx];
+            for (let i = 1; i < pts.length; i++) {
+              const x1 = 45 + pts[i - 1][0] * 66 + 31;
+              const y1 = 140 + pts[i - 1][1] * 66 + 31;
+              const x2 = 45 + pts[i][0] * 66 + 31;
+              const y2 = 140 + pts[i][1] * 66 + 31;
+              drawGlowLine(c, x1, y1, x2, y2, p.color, 13, p.color);
+            }
+            drawCircle(c, 45 + p.a[0] * 66 + 31, 140 + p.a[1] * 66 + 31, 18, p.color, '#fff', p.color);
+            drawCircle(c, 45 + p.b[0] * 66 + 31, 140 + p.b[1] * 66 + 31, 18, p.color, '#fff', p.color);
           });
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -216,18 +296,34 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     controlsHint: 'Swipe in any direction to push crates onto the green targets!',
     desc: 'Classic warehouse box-pushing puzzle.',
     create(rt): MiniGameInstance {
+      const levels = [
+        { p: { x: 1, y: 3 }, boxes: [{ x: 2, y: 2 }, { x: 3, y: 3 }], goals: [{ x: 4, y: 2 }, { x: 4, y: 4 }] },
+        { p: { x: 1, y: 2 }, boxes: [{ x: 2, y: 1 }, { x: 2, y: 3 }], goals: [{ x: 4, y: 1 }, { x: 4, y: 3 }] },
+        { p: { x: 0, y: 2 }, boxes: [{ x: 1, y: 2 }, { x: 2, y: 3 }], goals: [{ x: 4, y: 2 }, { x: 4, y: 4 }] },
+        { p: { x: 2, y: 4 }, boxes: [{ x: 2, y: 2 }, { x: 3, y: 2 }], goals: [{ x: 1, y: 1 }, { x: 4, y: 1 }] },
+      ];
+      let levelIdx = 0;
       let px = 1;
       let py = 3;
-      let boxes = [
-        { x: 2, y: 2 },
-        { x: 3, y: 3 },
-      ];
-      let goals = [
-        { x: 4, y: 2 },
-        { x: 4, y: 4 },
-      ];
+      let dir: 1 | -1 = 1;
+      let stepCnt = 0;
+      let boxes: { x: number; y: number }[] = [];
+      let goals: { x: number; y: number }[] = [];
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
+      const loadLevel = (idx: number) => {
+        const lv = levels[idx % levels.length];
+        px = lv.p.x;
+        py = lv.p.y;
+        boxes = lv.boxes.map((b) => ({ ...b }));
+        goals = lv.goals.map((g) => ({ ...g }));
+      };
+      loadLevel(0);
       const move = (dx: number, dy: number) => {
+        if (dx < 0) dir = -1;
+        else if (dx > 0) dir = 1;
         const nx = clamp(px + dx, 0, 5);
         const ny = clamp(py + dy, 0, 5);
         const b = boxes.find((bx) => bx.x === nx && bx.y === ny);
@@ -240,30 +336,31 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
         }
         px = nx;
         py = ny;
+        stepCnt++;
         rt.sfx.tap();
         if (goals.every((g) => boxes.some((b2) => b2.x === g.x && b2.y === g.y))) {
+          spawnBurst(bursts, W / 2, 290, '#22c55e', 18);
+          spawnPopup(popups, W / 2, 110, 'SOLVED! +100', '#4ade80', 22);
           score += 100;
           rt.setScore(score);
           rt.sfx.win();
-          boxes = [
-            { x: 2, y: Math.floor(Math.random() * 4) + 1 },
-            { x: 3, y: Math.floor(Math.random() * 4) + 1 },
-          ];
-          goals = [
-            { x: 5, y: 1 },
-            { x: 5, y: 4 },
-          ];
-          px = 0;
-          py = 2;
+          levelIdx = (levelIdx + 1) % levels.length;
+          loadLevel(levelIdx);
         }
       };
       return {
-        update(_dt, inp) {
+        update(dt, inp) {
+          lastDt = dt;
+          if (inp.justPressed && inp.y > 495) {
+            loadLevel(levelIdx);
+            rt.sfx.tap();
+            return;
+          }
           if (inp.swipe === 'up') move(0, -1);
           if (inp.swipe === 'down') move(0, 1);
           if (inp.swipe === 'left') move(-1, 0);
           if (inp.swipe === 'right') move(1, 0);
-          rt.setStatus('Swipe to push 📦 onto ❎');
+          rt.setStatus(`Level ${levelIdx + 1} · Swipe to push crates`);
         },
         onKey(k) {
           if (k === 'ArrowUp') move(0, -1);
@@ -273,15 +370,30 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#292524', '#090d16');
+          drawGradientBg(c, '#292524', '#090d16', 'rgba(217,119,6,0.14)');
           for (let y = 0; y < 6; y++) {
             for (let x = 0; x < 6; x++) {
-              drawRoundedBox(c, 45 + x * 55, 130 + y * 55, 50, 50, 8, '#44403c');
+              drawRoundedBox(c, 45 + x * 55, 130 + y * 55, 50, 50, 8, '#44403c', '#57534e');
             }
           }
           for (const g of goals) drawBadgeText(c, '❎', 70 + g.x * 55, 155 + g.y * 55, '#22c55e', 28);
-          for (const b of boxes) drawBadgeText(c, '📦', 70 + b.x * 55, 155 + b.y * 55, '#fff', 32);
-          drawBadgeText(c, '👷', 70 + px * 55, 155 + py * 55, '#fff', 32);
+          for (const b of boxes) {
+            const onGoal = goals.some((g) => g.x === b.x && g.y === b.y);
+            drawRoundedBox(c, 49 + b.x * 55, 134 + b.y * 55, 42, 42, 8, onGoal ? '#22c55e' : '#d97706', '#fde68a');
+            drawBadgeText(c, '📦', 70 + b.x * 55, 155 + b.y * 55, '#fff', 26);
+          }
+          drawCharacterSprite(c, 70 + px * 55, 155 + py * 55, {
+            style: 'worker',
+            suitColor: '#f97316',
+            accentColor: '#facc15',
+            dir,
+            stride: stepCnt * 1.4,
+            scale: 0.95,
+          });
+          drawRoundedBox(c, 115, 515, 190, 48, 12, '#44403c', '#f59e0b');
+          drawBadgeText(c, '🔄 Reset Level', W / 2, 539, '#fde68a', 16);
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -341,7 +453,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#0f172a', '#1e293b');
+          drawGradientBg(c, '#0f172a', '#1e293b', 'rgba(56,189,248,0.14)');
           for (let i = 0; i < 16; i++) {
             const v = tiles[i];
             if (v === 0) continue;
@@ -366,10 +478,13 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     create(rt): MiniGameInstance {
       const gems = ['💎', '🍒', '🍋', '🍏', '🔮'];
       const grid = Array.from({ length: 36 }, () => Math.floor(Math.random() * 5));
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       let sel: number | null = null;
       let score = 0;
       let timer = 50;
-      const clearMatches = () => {
+      let lastDt = 0.016;
+      const clearMatches = (awardScore: boolean) => {
         const hit = new Set<number>();
         for (let r = 0; r < 6; r++) {
           for (let c = 0; c < 4; c++) {
@@ -392,16 +507,30 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
           }
         }
         if (hit.size > 0) {
-          hit.forEach((idx) => (grid[idx] = Math.floor(Math.random() * 5)));
-          score += hit.size * 15;
-          rt.setScore(score);
-          rt.sfx.score();
+          hit.forEach((idx) => {
+            if (awardScore) {
+              const gx = 45 + (idx % 6) * 55 + 25;
+              const gy = 130 + Math.floor(idx / 6) * 55 + 25;
+              spawnBurst(bursts, gx, gy, '#f472b6', 7, 0.55);
+            }
+            grid[idx] = Math.floor(Math.random() * 5);
+          });
+          if (awardScore) {
+            const pts = hit.size * 15;
+            score += pts;
+            rt.setScore(score);
+            rt.sfx.score();
+            spawnPopup(popups, W / 2, 110, `+${pts} 💎`, '#fde047');
+          }
         }
         return hit.size > 0;
       };
-      clearMatches();
+      while (clearMatches(false)) {
+        // Clear initial board matches cleanly
+      }
       return {
         update(dt, inp) {
+          lastDt = dt;
           timer -= dt;
           if (timer <= 0) {
             rt.sfx.win();
@@ -421,7 +550,14 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
                 const sc = sel % 6;
                 if (Math.abs(sr - r) + Math.abs(sc - c) === 1) {
                   [grid[sel], grid[idx]] = [grid[idx], grid[sel]];
-                  if (!clearMatches()) [grid[sel], grid[idx]] = [grid[idx], grid[sel]];
+                  if (!clearMatches(true)) {
+                    [grid[sel], grid[idx]] = [grid[idx], grid[sel]];
+                    rt.sfx.hit();
+                  } else {
+                    while (clearMatches(true)) {
+                      // Cascade chain combos
+                    }
+                  }
                 }
                 sel = null;
               }
@@ -431,13 +567,15 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#3b0764', '#090d16');
+          drawGradientBg(c, '#3b0764', '#090d16', 'rgba(236,72,153,0.16)');
           for (let i = 0; i < 36; i++) {
             const x = 45 + (i % 6) * 55;
             const y = 130 + Math.floor(i / 6) * 55;
             drawRoundedBox(c, x, y, 50, 50, 10, '#1e293b', sel === i ? '#fde047' : '#475569');
             drawBadgeText(c, gems[grid[i]], x + 25, y + 25, '#fff', 28);
           }
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -452,15 +590,47 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
     controlsHint: "Tap parked cars to slide them out of the red car's path!",
     desc: 'Clear the exit lane on the right for the red car.',
     create(rt): MiniGameInstance {
-      let cars = [
-        { x: 1, y: 2, w: 2, h: 1, horiz: true, hero: true, color: '#ef4444' },
-        { x: 3, y: 1, w: 1, h: 2, horiz: false, hero: false, color: '#38bdf8' },
-        { x: 2, y: 3, w: 2, h: 1, horiz: true, hero: false, color: '#facc15' },
-        { x: 4, y: 2, w: 1, h: 2, horiz: false, hero: false, color: '#22c55e' },
+      interface ParkedCar {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+        horiz: boolean;
+        hero: boolean;
+        color: string;
+        stripe: string;
+      }
+      const layouts: ParkedCar[][] = [
+        [
+          { x: 1, y: 2, w: 2, h: 1, horiz: true, hero: true, color: '#ef4444', stripe: '#fde047' },
+          { x: 3, y: 1, w: 1, h: 2, horiz: false, hero: false, color: '#38bdf8', stripe: '#f8fafc' },
+          { x: 2, y: 3, w: 2, h: 1, horiz: true, hero: false, color: '#facc15', stripe: '#1e293b' },
+          { x: 4, y: 2, w: 1, h: 2, horiz: false, hero: false, color: '#22c55e', stripe: '#f8fafc' },
+        ],
+        [
+          { x: 0, y: 2, w: 2, h: 1, horiz: true, hero: true, color: '#ef4444', stripe: '#fde047' },
+          { x: 2, y: 0, w: 1, h: 3, horiz: false, hero: false, color: '#38bdf8', stripe: '#f8fafc' },
+          { x: 3, y: 1, w: 2, h: 1, horiz: true, hero: false, color: '#facc15', stripe: '#1e293b' },
+          { x: 4, y: 2, w: 1, h: 2, horiz: false, hero: false, color: '#22c55e', stripe: '#f8fafc' },
+          { x: 1, y: 3, w: 2, h: 1, horiz: true, hero: false, color: '#a855f7', stripe: '#f8fafc' },
+        ],
+        [
+          { x: 0, y: 2, w: 2, h: 1, horiz: true, hero: true, color: '#ef4444', stripe: '#fde047' },
+          { x: 2, y: 1, w: 1, h: 2, horiz: false, hero: false, color: '#38bdf8', stripe: '#f8fafc' },
+          { x: 3, y: 0, w: 1, h: 3, horiz: false, hero: false, color: '#facc15', stripe: '#1e293b' },
+          { x: 4, y: 1, w: 1, h: 2, horiz: false, hero: false, color: '#22c55e', stripe: '#f8fafc' },
+          { x: 2, y: 3, w: 2, h: 1, horiz: true, hero: false, color: '#a855f7', stripe: '#f8fafc' },
+        ],
       ];
+      let layoutIdx = 0;
+      let cars: ParkedCar[] = layouts[0].map((c) => ({ ...c }));
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       return {
-        update(_dt, inp) {
+        update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed) {
             const gx = Math.floor((inp.x - 45) / 55);
             const gy = Math.floor((inp.y - 135) / 55);
@@ -479,18 +649,18 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
                   ny + car.h > o.y
               );
               if (car.hero && nx + car.w >= 6 && !overlap) {
+                spawnBurst(bursts, 375, 272, '#22c55e', 16);
+                spawnPopup(popups, 300, 235, 'EXIT! +100', '#4ade80', 20);
                 score += 100;
                 rt.setScore(score);
                 rt.sfx.win();
-                car.x = 0;
-                cars[1].y = Math.floor(Math.random() * 2);
-                cars[3].y = Math.floor(Math.random() * 3) + 1;
+                layoutIdx = (layoutIdx + 1) % layouts.length;
+                cars = layouts[layoutIdx].map((c) => ({ ...c }));
               } else if (inBounds && !overlap) {
                 car.x = nx;
                 car.y = ny;
                 rt.sfx.tap();
               } else {
-                // try opposite direction on tap
                 const nx2 = car.x - (car.horiz ? step : 0);
                 const ny2 = car.y - (car.horiz ? 0 : step);
                 const ok2 =
@@ -507,16 +677,35 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               }
             }
           }
-          rt.setStatus('Guide red 🚗 to the exit →');
+          rt.setStatus(`Lot ${Math.floor(score / 100) + 1} · Guide red car →`);
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1e293b', '#090d16');
+          drawGradientBg(c, '#1e293b', '#090d16', 'rgba(239,68,68,0.12)');
           drawRoundedBox(c, 40, 130, 340, 340, 12, '#334155', '#94a3b8');
-          drawRoundedBox(c, 372, 244, 18, 56, 4, '#22c55e');
-          for (const car of cars) {
-            drawRoundedBox(c, 45 + car.x * 55 + 3, 135 + car.y * 55 + 3, car.w * 55 - 6, car.h * 55 - 6, 10, car.color, '#fff');
+          for (let i = 1; i < 6; i++) {
+            c.strokeStyle = 'rgba(255,255,255,0.08)';
+            c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(45 + i * 55, 135);
+            c.lineTo(45 + i * 55, 465);
+            c.moveTo(45, 135 + i * 55);
+            c.lineTo(375, 135 + i * 55);
+            c.stroke();
           }
+          drawRoundedBox(c, 372, 244, 18, 56, 4, '#22c55e', '#fff', '#22c55e');
+          for (const car of cars) {
+            const cx = 45 + (car.x + car.w / 2) * 55;
+            const cy = 135 + (car.y + car.h / 2) * 55;
+            const lenScale = Math.max(car.w, car.h) * 0.95;
+            drawCarSprite(c, cx, cy, car.horiz ? Math.PI / 2 : 0, car.color, car.stripe, {
+              scale: lenScale * 0.92,
+              headlights: car.hero,
+              spoiler: car.hero,
+            });
+          }
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -534,11 +723,16 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
       const presets = [
         [0,1,0,1,0, 1,1,1,1,1, 1,1,1,1,1, 0,1,1,1,0, 0,0,1,0,0],
         [0,0,1,0,0, 0,1,1,1,0, 1,1,0,1,1, 0,1,1,1,0, 0,0,1,0,0],
+        [0,1,1,1,0, 1,0,0,0,1, 1,0,1,0,1, 1,0,0,0,1, 0,1,1,1,0],
+        [1,0,1,0,1, 1,1,1,1,1, 0,1,1,1,0, 0,0,1,0,0, 0,1,1,1,0],
       ];
       let level = 0;
       let target = presets[0];
       let cur = Array(25).fill(0);
       let score = 0;
+      let lastDt = 0.016;
+      const bursts: Burst[] = [];
+      const popups: FloatingPopup[] = [];
       const clue = (arr: number[]) => {
         const res: number[] = [];
         let run = 0;
@@ -553,7 +747,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
         return res.length ? res.join(' ') : '0';
       };
       return {
-        update(_dt, inp) {
+        update(dt, inp) {
+          lastDt = dt;
           if (inp.justPressed) {
             const c = Math.floor((inp.x - 105) / 54);
             const r = Math.floor((inp.y - 180) / 54);
@@ -561,6 +756,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               cur[r * 5 + c] = cur[r * 5 + c] ? 0 : 1;
               rt.sfx.tap();
               if (cur.every((v, i) => v === target[i])) {
+                spawnBurst(bursts, 240, 315, '#38bdf8', 18);
+                spawnPopup(popups, 240, 130, 'ART COMPLETE! +100', '#fde047', 18);
                 score += 100;
                 rt.setScore(score);
                 rt.sfx.win();
@@ -574,7 +771,7 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#1e1b4b', '#090d16');
+          drawGradientBg(c, '#1e1b4b', '#090d16', 'rgba(99,102,241,0.14)');
           for (let rI = 0; rI < 5; rI++) {
             const rowClue = clue(target.slice(rI * 5, rI * 5 + 5));
             drawBadgeText(c, rowClue, 90, 207 + rI * 54, '#fde047', 14, 'right');
@@ -586,6 +783,8 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               drawRoundedBox(c, 105 + cI * 54, 180 + rI * 54, 48, 48, 8, cur[rI * 5 + cI] ? '#38bdf8' : '#334155', '#94a3b8');
             }
           }
+          updateAndDrawBursts(c, bursts, lastDt);
+          updateAndDrawPopups(c, popups, lastDt);
         },
       };
     },
@@ -712,8 +911,9 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
               }
             }
           } else if (inp.justPressed) {
+            if (inp.x < 35 || inp.x > W - 35 || inp.y < 155 || inp.y > 520) return;
             const c = inp.x < W / 2 ? 0 : 1;
-            const r = inp.y < 330 ? 0 : 1;
+            const r = inp.y < 336 ? 0 : 1;
             const pad = r * 2 + c;
             if (pad === seq[inputIdx]) {
               inputIdx++;
@@ -737,12 +937,12 @@ export const GROUP_08_PUZZLES: MiniGameDef[] = [
         },
         render(r) {
           const c = r.ctx;
-          drawGradientBg(c, '#090d16', '#1e1b4b');
+          drawGradientBg(c, '#090d16', '#1e1b4b', 'rgba(168,85,247,0.16)');
           for (let i = 0; i < 4; i++) {
             const x = 42 + (i % 2) * 176;
             const y = 160 + Math.floor(i / 2) * 176;
             c.globalAlpha = lit === i ? 1 : 0.45;
-            drawRoundedBox(c, x, y, 160, 160, 22, cols[i], lit === i ? '#fff' : undefined);
+            drawRoundedBox(c, x, y, 160, 160, 22, cols[i], lit === i ? '#fff' : undefined, lit === i ? cols[i] : undefined);
             c.globalAlpha = 1;
           }
         },

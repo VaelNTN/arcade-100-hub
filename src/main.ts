@@ -1,6 +1,7 @@
 import './style.css';
 import {
   fetchGlobalArcadeHubHighscores,
+  flushPendingArcadeHubScores,
   GlobalArcadeHubEntry,
   submitGlobalArcadeHubScore,
 } from './api/highscores';
@@ -36,14 +37,20 @@ let activeCat: CategoryId = 'all';
 let searchTerm = '';
 let hsTab: HsTab = 'global';
 let hsGameId = 'overall';
+let currentScreen: ScreenId = 'hub';
+let hsRequestSeq = 0;
 
 let currentGame: MiniGameDef | null = null;
 let currentInstance: MiniGameInstance | null = null;
+let currentRt: MiniGameRuntime | null = null;
 let rafId: number | null = null;
 let lastTs = 0;
 let liveScore = 0;
 let liveStatus = '';
 let gameEnded = false;
+let activePointerId: number | null = null;
+let currentDpr = 1;
+let hitFlashTimer: number | null = null;
 
 const input: InputState = {
   down: false,
@@ -57,6 +64,29 @@ const input: InputState = {
   startY: H / 2,
   swipe: null,
 };
+
+function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sanitizeScore(val: number): number {
+  return Number.isFinite(val) ? Math.max(0, Math.floor(val)) : 0;
+}
+
+function resetInputState(): void {
+  activePointerId = null;
+  input.down = false;
+  input.justPressed = false;
+  input.justReleased = false;
+  input.dx = 0;
+  input.dy = 0;
+  input.swipe = null;
+}
 
 const root = document.getElementById('app') as HTMLElement;
 
@@ -160,7 +190,24 @@ root.innerHTML = `
   </section>
 `;
 
+function syncCanvasDpr(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): number {
+  const rawDpr = window.devicePixelRatio || 1;
+  const dpr = Number.isFinite(rawDpr) && rawDpr > 0 ? Math.min(rawDpr, 3) : 1;
+  const targetW = Math.max(1, Math.round(W * dpr));
+  const targetH = Math.max(1, Math.round(H * dpr));
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  currentDpr = dpr;
+  return dpr;
+}
+
 function showScreen(id: ScreenId): void {
+  currentScreen = id;
   (['hub', 'play', 'highscores', 'options'] as ScreenId[]).forEach((s) => {
     document.getElementById(`screen-${s}`)?.classList.toggle('hidden', s !== id);
   });
@@ -175,10 +222,21 @@ function stopGameLoop(): void {
     cancelAnimationFrame(rafId);
     rafId = null;
   }
+  if (hitFlashTimer !== null) {
+    window.clearTimeout(hitFlashTimer);
+    hitFlashTimer = null;
+  }
+  document.getElementById('arcade-canvas')?.classList.remove('flash-hit');
+  resetInputState();
   if (currentInstance?.destroy) {
-    currentInstance.destroy();
+    try {
+      currentInstance.destroy();
+    } catch {
+      // Ignore cleanup errors from individual games
+    }
   }
   currentInstance = null;
+  currentRt = null;
 }
 
 function renderCategories(): void {
@@ -241,8 +299,8 @@ function renderHub(): void {
           <button class="fav-btn" data-fav="${g.id}" title="Favorite">${fav ? '★' : '☆'}</button>
         </div>
         <div class="card-icon">${g.icon}</div>
-        <div class="card-title">${g.title}</div>
-        <div class="card-desc">${g.desc}</div>
+        <div class="card-title">${escapeHtml(g.title)}</div>
+        <div class="card-desc">${escapeHtml(g.desc)}</div>
         <div class="card-best">${best > 0 ? `🏆 Best: ${best} pt` : '▶ Tap to play'}</div>
       </div>`;
     })
@@ -275,16 +333,33 @@ function syncSoundButton(): void {
   if (btn) btn.textContent = appState.soundEnabled ? '🔊' : '🔇';
 }
 
+function pulseScoreHud(): void {
+  const el = document.getElementById('play-score');
+  if (!el) return;
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
+
+function triggerCabinetHitFlash(): void {
+  const canvas = document.getElementById('arcade-canvas');
+  if (!canvas) return;
+  canvas.classList.add('flash-hit');
+  if (hitFlashTimer !== null) window.clearTimeout(hitFlashTimer);
+  hitFlashTimer = window.setTimeout(() => {
+    canvas.classList.remove('flash-hit');
+    hitFlashTimer = null;
+  }, 160);
+}
+
 function launchGame(game: MiniGameDef): void {
   stopGameLoop();
   currentGame = game;
   liveScore = 0;
   liveStatus = 'Play!';
   gameEnded = false;
-  input.down = false;
-  input.justPressed = false;
-  input.justReleased = false;
-  input.swipe = null;
+
+  document.documentElement.style.setProperty('--game-accent', game.color || '#38bdf8');
 
   showScreen('play');
   syncSoundButton();
@@ -298,14 +373,11 @@ function launchGame(game: MiniGameDef): void {
   if (hintEl) hintEl.textContent = game.controlsHint;
   if (statusEl) statusEl.textContent = 'Good luck!';
 
-  const canvas = document.getElementById('arcade-canvas') as HTMLCanvasElement;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  const canvas = document.getElementById('arcade-canvas') as HTMLCanvasElement | null;
+  const ctx = canvas?.getContext('2d');
+  if (!canvas || !ctx) return;
 
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
-  canvas.width = Math.round(W * dpr);
-  canvas.height = Math.round(H * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  syncCanvasDpr(canvas, ctx);
 
   const rt: MiniGameRuntime = {
     ctx,
@@ -314,14 +386,23 @@ function launchGame(game: MiniGameDef): void {
     sfx: {
       tap: () => sfx.tap(),
       score: () => sfx.score(),
-      hit: () => sfx.hit(),
-      explode: () => sfx.explode(),
+      hit: () => {
+        sfx.hit();
+        triggerCabinetHitFlash();
+      },
+      explode: () => {
+        sfx.explode();
+        triggerCabinetHitFlash();
+      },
       win: () => sfx.win(),
     },
     setScore(s: number) {
-      liveScore = Math.max(0, Math.floor(s));
+      const clean = sanitizeScore(s);
+      const changed = clean > liveScore;
+      liveScore = clean;
       const el = document.getElementById('play-score');
       if (el) el.textContent = `${liveScore} pt`;
+      if (changed) pulseScoreHud();
     },
     setStatus(text: string) {
       if (text !== liveStatus) {
@@ -333,13 +414,17 @@ function launchGame(game: MiniGameDef): void {
     endGame(finalScore: number, summary?: string) {
       if (gameEnded) return;
       gameEnded = true;
-      const cleanScore = Math.max(0, Math.floor(finalScore));
+      resetInputState();
+      const cleanScore = sanitizeScore(finalScore);
       liveScore = cleanScore;
+      const scoreElNow = document.getElementById('play-score');
+      if (scoreElNow) scoreElNow.textContent = `${cleanScore} pt`;
+
       const isNew = recordGameScore(appState, game.id, cleanScore);
       const { totalScore, gamesPlayed } = computeTotalArcadeScore(appState);
 
       if (appState.apiBaseUrl && cleanScore > 0) {
-        submitGlobalArcadeHubScore(appState.apiBaseUrl, {
+        void submitGlobalArcadeHubScore(appState.apiBaseUrl, {
           deviceId: appState.deviceId,
           playerName: appState.playerName,
           gameId: game.id,
@@ -360,21 +445,34 @@ function launchGame(game: MiniGameDef): void {
     },
   };
 
+  currentRt = rt;
   currentInstance = game.create(rt);
   lastTs = performance.now();
 
   const frame = (ts: number) => {
-    const dt = Math.min(0.035, Math.max(0.001, (ts - lastTs) / 1000));
+    if (currentScreen !== 'play' || !currentInstance) {
+      rafId = null;
+      return;
+    }
+    const rawDt = (ts - lastTs) / 1000;
+    const dt = Number.isFinite(rawDt) ? Math.min(0.05, Math.max(0.001, rawDt)) : 0.016;
     lastTs = ts;
-    if (currentInstance && !gameEnded) {
+
+    if (!gameEnded) {
       currentInstance.update(dt, input, rt);
       input.justPressed = false;
       input.justReleased = false;
       input.swipe = null;
       input.dx = 0;
       input.dy = 0;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
       currentInstance.render(rt);
+    }
+
+    if (gameEnded) {
+      rafId = null;
+      return;
     }
     rafId = requestAnimationFrame(frame);
   };
@@ -385,13 +483,23 @@ function attachCanvasInput(): void {
   const canvas = document.getElementById('arcade-canvas') as HTMLCanvasElement;
   const mapCoords = (e: PointerEvent) => {
     const rect = canvas.getBoundingClientRect();
+    const rw = rect.width > 0 ? rect.width : W;
+    const rh = rect.height > 0 ? rect.height : H;
     return {
-      x: ((e.clientX - rect.left) / Math.max(1, rect.width)) * W,
-      y: ((e.clientY - rect.top) / Math.max(1, rect.height)) * H,
+      x: Math.max(0, Math.min(W, ((e.clientX - rect.left) / rw) * W)),
+      y: Math.max(0, Math.min(H, ((e.clientY - rect.top) / rh) * H)),
     };
   };
 
   canvas.addEventListener('pointerdown', (e) => {
+    if (currentScreen !== 'play' || gameEnded) return;
+    if (activePointerId !== null && activePointerId !== e.pointerId) return;
+    activePointerId = e.pointerId;
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore if pointer capture unsupported
+    }
     const p = mapCoords(e);
     input.down = true;
     input.justPressed = true;
@@ -405,7 +513,7 @@ function attachCanvasInput(): void {
   });
 
   window.addEventListener('pointermove', (e) => {
-    if (!input.down) return;
+    if (!input.down || e.pointerId !== activePointerId) return;
     const p = mapCoords(e);
     input.dx = p.x - input.x;
     input.dy = p.y - input.y;
@@ -413,41 +521,53 @@ function attachCanvasInput(): void {
     input.y = p.y;
   });
 
-  window.addEventListener('pointerup', () => {
-    if (!input.down) return;
+  const handlePointerRelease = (e: PointerEvent, isCancel: boolean) => {
+    if (!input.down || e.pointerId !== activePointerId) return;
+    activePointerId = null;
     input.down = false;
-    input.justReleased = true;
-    const sdx = input.x - input.startX;
-    const sdy = input.y - input.startY;
-    if (Math.hypot(sdx, sdy) > 28) {
-      if (Math.abs(sdx) > Math.abs(sdy)) {
-        input.swipe = sdx > 0 ? 'right' : 'left';
-      } else {
-        input.swipe = sdy > 0 ? 'down' : 'up';
+    if (!isCancel) {
+      const p = mapCoords(e);
+      input.x = p.x;
+      input.y = p.y;
+      input.justReleased = true;
+      const sdx = input.x - input.startX;
+      const sdy = input.y - input.startY;
+      if (Math.hypot(sdx, sdy) > 28) {
+        if (Math.abs(sdx) > Math.abs(sdy)) {
+          input.swipe = sdx > 0 ? 'right' : 'left';
+        } else {
+          input.swipe = sdy > 0 ? 'down' : 'up';
+        }
       }
+    }
+  };
+
+  window.addEventListener('pointerup', (e) => handlePointerRelease(e, false));
+  window.addEventListener('pointercancel', (e) => handlePointerRelease(e, true));
+
+  window.addEventListener('blur', () => {
+    resetInputState();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      resetInputState();
+    } else {
+      lastTs = performance.now();
     }
   });
 
+  window.addEventListener('resize', () => {
+    const ctx = canvas.getContext('2d');
+    if (ctx) syncCanvasDpr(canvas, ctx);
+  });
+
   window.addEventListener('keydown', (e) => {
-    if (currentInstance?.onKey && currentGame) {
-      currentInstance.onKey(e.key, {
-        ctx: canvas.getContext('2d') as CanvasRenderingContext2D,
-        width: W,
-        height: H,
-        sfx: {
-          tap: () => sfx.tap(),
-          score: () => sfx.score(),
-          hit: () => sfx.hit(),
-          explode: () => sfx.explode(),
-          win: () => sfx.win(),
-        },
-        setScore: (s) => {
-          liveScore = s;
-        },
-        setStatus: () => {},
-        endGame: () => {},
-      });
+    if (currentScreen !== 'play' || gameEnded || !currentInstance?.onKey || !currentRt) return;
+    if (e.key.startsWith('Arrow') || e.key === ' ') {
+      e.preventDefault();
     }
+    currentInstance.onKey(e.key, currentRt);
   });
 }
 
@@ -456,13 +576,14 @@ function populateHighscoreSelect(): void {
   if (!sel) return;
   const opts = [
     `<option value="overall">🏆 Overall Arcade Ranking (All 100 games)</option>`,
-    ...ALL_GAMES.map((g) => `<option value="${g.id}">#${g.num} ${g.icon} ${g.title}</option>`),
+    ...ALL_GAMES.map((g) => `<option value="${g.id}">#${g.num} ${g.icon} ${escapeHtml(g.title)}</option>`),
   ];
   sel.innerHTML = opts.join('');
   sel.value = hsGameId;
 }
 
 async function renderHighscores(): Promise<void> {
+  const reqId = ++hsRequestSeq;
   populateHighscoreSelect();
   const urlInp = document.getElementById('inp-api-url') as HTMLInputElement | null;
   if (urlInp) urlInp.value = appState.apiBaseUrl;
@@ -493,7 +614,7 @@ async function renderHighscores(): Promise<void> {
         <div class="hs-left">
           <span class="hs-rank">#${i + 1}</span>
           <div>
-            <div class="hs-name">${g.icon} ${g.title}</div>
+            <div class="hs-name">${g.icon} ${escapeHtml(g.title)}</div>
             <div class="hs-meta">Played ${appState.playCounts[g.id] || 1}×</div>
           </div>
         </div>
@@ -512,6 +633,7 @@ async function renderHighscores(): Promise<void> {
   list.innerHTML = `<div class="hs-row"><span class="hs-meta">Loading online scores...</span></div>`;
   try {
     const res = await fetchGlobalArcadeHubHighscores(appState.apiBaseUrl, hsGameId, appState.deviceId);
+    if (reqId !== hsRequestSeq || currentScreen !== 'highscores' || hsTab !== 'global') return;
     if (!res.entries.length) {
       list.innerHTML = `<div class="hs-row"><span class="hs-meta">No online scores for this game yet — be #1!</span></div>`;
       return;
@@ -519,21 +641,22 @@ async function renderHighscores(): Promise<void> {
     list.innerHTML = res.entries
       .map((e: GlobalArcadeHubEntry) => {
         const isMe = e.deviceId === appState.deviceId;
-        const av = typeof e.avatarId === 'number' ? AVATARS[e.avatarId % AVATARS.length] : '🎮';
+        const av = typeof e.avatarId === 'number' ? AVATARS[Math.abs(Math.floor(e.avatarId)) % AVATARS.length] : '🎮';
         return `
         <div class="hs-row ${isMe ? 'me' : ''}">
           <div class="hs-left">
             <span class="hs-rank">#${e.rank}</span>
             <div>
-              <div class="hs-name">${av} ${e.playerName} ${isMe ? '(You)' : ''}</div>
-              <div class="hs-meta">${e.gamesPlayed !== undefined ? `${e.gamesPlayed} games` : hsGameId}</div>
+              <div class="hs-name">${av} ${escapeHtml(e.playerName || 'ArcadePlayer')} ${isMe ? '(You)' : ''}</div>
+              <div class="hs-meta">${e.gamesPlayed !== undefined ? `${e.gamesPlayed} games` : escapeHtml(hsGameId)}</div>
             </div>
           </div>
-          <span class="hs-score">${e.score} pt</span>
+          <span class="hs-score">${sanitizeScore(e.score)} pt</span>
         </div>`;
       })
       .join('');
   } catch {
+    if (reqId !== hsRequestSeq || currentScreen !== 'highscores' || hsTab !== 'global') return;
     if (statusBanner) statusBanner.textContent = '📱 Offline Mode — Local Highscores';
     list.innerHTML = `<div class="hs-row"><span class="hs-meta">Offline Mode — Local Highscores. Unable to reach online leaderboard.</span></div>`;
   }
@@ -549,7 +672,7 @@ function renderOptions(): void {
     ).join('');
     grid.querySelectorAll<HTMLButtonElement>('[data-av]').forEach((btn) => {
       btn.onclick = () => {
-        appState.avatarId = Number(btn.dataset.av);
+        appState.avatarId = Number(btn.dataset.av) || 0;
         saveArcadeHubState(appState);
         renderOptions();
       };
@@ -563,6 +686,10 @@ async function init(): Promise<void> {
   const deviceId = await resolveDeviceId();
   appState = loadArcadeHubState(deviceId);
   sfx.enabled = appState.soundEnabled;
+
+  if (appState.apiBaseUrl) {
+    void flushPendingArcadeHubScores(appState.apiBaseUrl);
+  }
 
   attachCanvasInput();
   renderHub();

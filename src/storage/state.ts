@@ -41,6 +41,17 @@ export async function resolveDeviceId(): Promise<string> {
   return fresh;
 }
 
+function sanitizeScoreMap(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== 'object') return {};
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === 'number' && Number.isFinite(v) && v >= 0) {
+      out[k] = Math.floor(v);
+    }
+  }
+  return out;
+}
+
 export function loadArcadeHubState(deviceId: string): ArcadeHubState {
   const defaultApi = ((import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_URL || '')
     .trim()
@@ -69,13 +80,16 @@ export function loadArcadeHubState(deviceId: string): ArcadeHubState {
           : defaultApi,
       playerName:
         typeof p.playerName === 'string' && p.playerName.trim()
-          ? p.playerName.trim()
+          ? p.playerName.trim().slice(0, 20)
           : 'ArcadePlayer',
-      avatarId: typeof p.avatarId === 'number' ? p.avatarId : 0,
+      avatarId:
+        typeof p.avatarId === 'number' && Number.isFinite(p.avatarId)
+          ? Math.max(0, Math.floor(p.avatarId)) % AVATARS.length
+          : 0,
       soundEnabled: p.soundEnabled !== false,
-      favorites: Array.isArray(p.favorites) ? p.favorites : [],
-      bestScores: p.bestScores && typeof p.bestScores === 'object' ? p.bestScores : {},
-      playCounts: p.playCounts && typeof p.playCounts === 'object' ? p.playCounts : {},
+      favorites: Array.isArray(p.favorites) ? p.favorites.filter((x) => typeof x === 'string') : [],
+      bestScores: sanitizeScoreMap(p.bestScores),
+      playCounts: sanitizeScoreMap(p.playCounts),
     };
   } catch {
     return base;
@@ -94,7 +108,7 @@ export function computeTotalArcadeScore(state: ArcadeHubState): { totalScore: nu
   let totalScore = 0;
   let gamesPlayed = 0;
   for (const val of Object.values(state.bestScores)) {
-    if (val > 0) {
+    if (typeof val === 'number' && Number.isFinite(val) && val > 0) {
       totalScore += Math.floor(val);
       gamesPlayed += 1;
     }
@@ -103,7 +117,7 @@ export function computeTotalArcadeScore(state: ArcadeHubState): { totalScore: nu
 }
 
 export function recordGameScore(state: ArcadeHubState, gameId: string, score: number): boolean {
-  const clean = Math.max(0, Math.floor(score));
+  const clean = Number.isFinite(score) ? Math.max(0, Math.floor(score)) : 0;
   state.playCounts[gameId] = (state.playCounts[gameId] || 0) + 1;
   const prev = state.bestScores[gameId] || 0;
   const isNewBest = clean > prev;
