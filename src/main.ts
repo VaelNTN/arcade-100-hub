@@ -48,9 +48,29 @@ let lastTs = 0;
 let liveScore = 0;
 let liveStatus = '';
 let gameEnded = false;
+let gameReady = false;
+let gamePaused = false;
+let confirmQuitArmed = false;
 let activePointerId: number | null = null;
 let currentDpr = 1;
 let hitFlashTimer: number | null = null;
+
+function getMedal(score: number): string {
+  if (score >= 750) return '🥇';
+  if (score >= 300) return '🥈';
+  if (score >= 100) return '🥉';
+  return '';
+}
+
+function pickRandomOtherGame(): MiniGameDef {
+  if (ALL_GAMES.length <= 1) return ALL_GAMES[0];
+  let pick = ALL_GAMES[Math.floor(Math.random() * ALL_GAMES.length)];
+  if (currentGame && pick.id === currentGame.id) {
+    const idx = (ALL_GAMES.findIndex((g) => g.id === currentGame!.id) + 1) % ALL_GAMES.length;
+    pick = ALL_GAMES[idx];
+  }
+  return pick;
+}
 
 const input: InputState = {
   down: false,
@@ -101,6 +121,7 @@ root.innerHTML = `
         </div>
       </div>
       <div class="icon-actions">
+        <button id="btn-more-games" class="btn-icon" title="More Games">✨</button>
         <button id="btn-random" class="btn-icon" title="Random">🎲</button>
         <button id="btn-hs" class="btn-icon" title="Leaderboard">🏆</button>
         <button id="btn-opt" class="btn-icon" title="Profile">⚙️</button>
@@ -108,7 +129,7 @@ root.innerHTML = `
     </div>
 
     <div class="search-row">
-      <input id="inp-search" class="search-input" type="search" placeholder="Search games..." />
+      <input id="inp-search" class="search-input" type="search" placeholder="Search 100 mini-games..." />
     </div>
 
     <div id="cat-strip" class="cat-strip"></div>
@@ -117,26 +138,37 @@ root.innerHTML = `
 
   <section id="screen-play" class="screen play-screen hidden">
     <div class="play-top">
-      <button id="btn-back-hub" class="btn-small">← Hub</button>
+      <button id="btn-play-pause" class="btn-small">⏸ Pause</button>
       <div class="play-meta">
         <div id="play-title" class="play-name">Game</div>
         <div id="play-score" class="play-score">0 pt</div>
       </div>
-      <div style="display:flex;gap:6px;">
-        <button id="btn-play-sound" class="btn-small">🔊</button>
-        <button id="btn-play-restart" class="btn-small">↻</button>
+      <div class="play-top-actions">
+        <button id="btn-play-sound" class="btn-small" aria-label="Toggle sound">🔊</button>
+        <button id="btn-play-restart" class="btn-small" title="Restart">↻</button>
       </div>
     </div>
 
     <div class="canvas-stage">
       <canvas id="arcade-canvas" class="arcade-canvas" width="${W}" height="${H}"></canvas>
+      <div id="play-ready" class="ready-overlay hidden">
+        <div class="ready-card">
+          <div id="ready-icon" class="ready-icon">🎮</div>
+          <h2 id="ready-title" class="ready-title">Game Title</h2>
+          <p id="ready-hint" class="ready-hint">Tap to play!</p>
+          <button id="btn-ready-start" class="btn btn-primary">▶ Tap to Start</button>
+        </div>
+      </div>
       <div id="play-gameover" class="gameover-card hidden">
         <h2 id="go-title" style="margin:0;color:#fde047;">Game Over</h2>
         <div id="go-summary" style="font-size:0.9rem;color:#cbd5e1;"></div>
-        <div id="go-best" style="font-size:0.9rem;font-weight:800;color:#22c55e;"></div>
+        <div id="go-best" style="font-size:0.88rem;font-weight:800;color:#22c55e;"></div>
         <button id="btn-go-replay" class="btn btn-primary">🔄 Play Again</button>
-        <button id="btn-go-hs" class="btn btn-secondary">🏆 Leaderboard</button>
-        <button id="btn-go-hub" class="btn btn-secondary">🏠 Back to Hub</button>
+        <button id="btn-go-next" class="btn btn-secondary">🎲 Next Random Game</button>
+        <div class="go-btn-row">
+          <button id="btn-go-hs" class="btn btn-secondary">🏆 Ranks</button>
+          <button id="btn-go-hub" class="btn btn-secondary">🏠 Hub</button>
+        </div>
       </div>
     </div>
 
@@ -188,6 +220,52 @@ root.innerHTML = `
       </div>
     </div>
   </section>
+
+  <div id="pause-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h3 class="modal-title">⏸ Paused</h3>
+      <p id="pause-game-name" class="modal-sub">Take a quick arcade break.</p>
+      <button id="btn-pause-resume" class="btn btn-primary">▶ Resume</button>
+      <button id="btn-pause-restart" class="btn btn-secondary">↻ Restart Game</button>
+      <button id="btn-pause-random" class="btn btn-secondary">🎲 Next Random Game</button>
+      <button id="btn-pause-hub" class="btn btn-danger">🏠 Quit to Hub</button>
+    </div>
+  </div>
+
+  <div id="more-games-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h3 class="modal-title">✨ More by VaelNTN</h3>
+      <p class="modal-sub">Full standalone games crafted by VaelNTN Studios.</p>
+      <div class="more-games-list">
+        <a class="more-game-item featured" href="https://github.com/VaelNTN/starforge-survivors/releases/latest" target="_blank" rel="noopener noreferrer">
+          <div>
+            <div class="more-game-name">⭐ Starforge Survivors</div>
+            <div class="more-game-desc">Flagship sci-fi roguelite — 6 heroes, 6 bosses & zero ads</div>
+          </div>
+          <span class="more-game-badge">FLAGSHIP</span>
+        </a>
+        <a class="more-game-item" href="https://github.com/VaelNTN/pocket-tanks-duel/releases/latest" target="_blank" rel="noopener noreferrer">
+          <div>
+            <div class="more-game-name">💥 Matey Tanks</div>
+            <div class="more-game-desc">Artillery battles with wind & mana weapons</div>
+          </div>
+        </a>
+        <a class="more-game-item" href="https://github.com/VaelNTN/turbo-drift-racer/releases/latest" target="_blank" rel="noopener noreferrer">
+          <div>
+            <div class="more-game-name">🏎️ Turbo Drift Racer</div>
+            <div class="more-game-desc">High-speed arcade drifting across 4 biomes</div>
+          </div>
+        </a>
+        <a class="more-game-item" href="https://github.com/VaelNTN/frog-parkour/releases/latest" target="_blank" rel="noopener noreferrer">
+          <div>
+            <div class="more-game-name">🐸 Frog Parkour</div>
+            <div class="more-game-desc">Tongue-grapple pond jumping action</div>
+          </div>
+        </a>
+      </div>
+      <button id="btn-more-close" class="btn btn-secondary">Close</button>
+    </div>
+  </div>
 `;
 
 function syncCanvasDpr(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): number {
@@ -206,8 +284,39 @@ function syncCanvasDpr(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D)
   return dpr;
 }
 
+function openPauseModal(): void {
+  if (currentScreen !== 'play' || gameEnded) return;
+  gamePaused = true;
+  confirmQuitArmed = false;
+  resetInputState();
+  const nameEl = document.getElementById('pause-game-name');
+  if (nameEl && currentGame) nameEl.textContent = `${currentGame.icon} ${currentGame.title}`;
+  const quitBtn = document.getElementById('btn-pause-hub');
+  if (quitBtn) quitBtn.textContent = '🏠 Quit to Hub';
+  document.getElementById('pause-modal')?.classList.remove('hidden');
+}
+
+function closePauseModal(resume = true): void {
+  document.getElementById('pause-modal')?.classList.add('hidden');
+  confirmQuitArmed = false;
+  if (resume) {
+    gamePaused = false;
+    lastTs = performance.now();
+  }
+}
+
+function beginActivePlay(): void {
+  if (gameReady || gameEnded) return;
+  gameReady = true;
+  document.getElementById('play-ready')?.classList.add('hidden');
+  lastTs = performance.now();
+  sfx.tap();
+}
+
 function showScreen(id: ScreenId): void {
   currentScreen = id;
+  closePauseModal(false);
+  document.getElementById('more-games-modal')?.classList.add('hidden');
   (['hub', 'play', 'highscores', 'options'] as ScreenId[]).forEach((s) => {
     document.getElementById(`screen-${s}`)?.classList.toggle('hidden', s !== id);
   });
@@ -228,6 +337,8 @@ function stopGameLoop(): void {
   }
   document.getElementById('arcade-canvas')?.classList.remove('flash-hit');
   resetInputState();
+  gamePaused = false;
+  gameReady = false;
   if (currentInstance?.destroy) {
     try {
       currentInstance.destroy();
@@ -262,8 +373,12 @@ function renderHub(): void {
   const av = document.getElementById('hub-avatar');
   if (av) av.textContent = AVATARS[appState.avatarId % AVATARS.length];
   const { totalScore, gamesPlayed } = computeTotalArcadeScore(appState);
+  let medals = 0;
+  for (const g of ALL_GAMES) {
+    if (getMedal(appState.bestScores[g.id] || 0)) medals++;
+  }
   const sum = document.getElementById('hub-summary');
-  if (sum) sum.textContent = `${ALL_GAMES.length} Games · ${gamesPlayed} played · ${totalScore} pt`;
+  if (sum) sum.textContent = `${ALL_GAMES.length} Games · ${gamesPlayed} played · 🏅 ${medals} · ${totalScore} pt`;
 
   renderCategories();
   const grid = document.getElementById('games-grid');
@@ -292,6 +407,7 @@ function renderHub(): void {
     .map((g) => {
       const best = appState.bestScores[g.id] || 0;
       const fav = appState.favorites.includes(g.id);
+      const medal = getMedal(best);
       return `
       <div class="game-card" data-launch="${g.id}" style="border-top:3px solid ${g.color};">
         <div class="card-top">
@@ -301,7 +417,10 @@ function renderHub(): void {
         <div class="card-icon">${g.icon}</div>
         <div class="card-title">${escapeHtml(g.title)}</div>
         <div class="card-desc">${escapeHtml(g.desc)}</div>
-        <div class="card-best">${best > 0 ? `🏆 Best: ${best} pt` : '▶ Tap to play'}</div>
+        <div class="card-best">
+          <span>${best > 0 ? `🏆 ${best} pt` : '▶ Tap to play'}</span>
+          ${medal ? `<span class="medal-pill">${medal}</span>` : ''}
+        </div>
       </div>`;
     })
     .join('');
@@ -356,14 +475,25 @@ function launchGame(game: MiniGameDef): void {
   stopGameLoop();
   currentGame = game;
   liveScore = 0;
-  liveStatus = 'Play!';
+  liveStatus = 'Ready!';
   gameEnded = false;
+  gameReady = false;
+  gamePaused = false;
 
   document.documentElement.style.setProperty('--game-accent', game.color || '#38bdf8');
 
   showScreen('play');
   syncSoundButton();
   document.getElementById('play-gameover')?.classList.add('hidden');
+  document.getElementById('play-ready')?.classList.remove('hidden');
+
+  const rIcon = document.getElementById('ready-icon');
+  const rTitle = document.getElementById('ready-title');
+  const rHint = document.getElementById('ready-hint');
+  if (rIcon) rIcon.textContent = game.icon;
+  if (rTitle) rTitle.textContent = game.title;
+  if (rHint) rHint.textContent = game.controlsHint;
+
   const titleEl = document.getElementById('play-title');
   const scoreEl = document.getElementById('play-score');
   const hintEl = document.getElementById('play-hint');
@@ -371,7 +501,7 @@ function launchGame(game: MiniGameDef): void {
   if (titleEl) titleEl.textContent = `${game.icon} ${game.title}`;
   if (scoreEl) scoreEl.textContent = '0 pt';
   if (hintEl) hintEl.textContent = game.controlsHint;
-  if (statusEl) statusEl.textContent = 'Good luck!';
+  if (statusEl) statusEl.textContent = 'Tap to begin!';
 
   const canvas = document.getElementById('arcade-canvas') as HTMLCanvasElement | null;
   const ctx = canvas?.getContext('2d');
@@ -414,6 +544,9 @@ function launchGame(game: MiniGameDef): void {
     endGame(finalScore: number, summary?: string) {
       if (gameEnded) return;
       gameEnded = true;
+      gameReady = true;
+      document.getElementById('play-ready')?.classList.add('hidden');
+      closePauseModal(false);
       resetInputState();
       const cleanScore = sanitizeScore(finalScore);
       liveScore = cleanScore;
@@ -435,18 +568,22 @@ function launchGame(game: MiniGameDef): void {
         });
       }
 
+      const bestNow = appState.bestScores[game.id] || cleanScore;
+      const medal = getMedal(bestNow);
       const goTitle = document.getElementById('go-title');
       const goSum = document.getElementById('go-summary');
       const goBest = document.getElementById('go-best');
       if (goTitle) goTitle.textContent = isNew ? '🎉 New High Score!' : '🏁 Game Over';
       if (goSum) goSum.textContent = summary || `Score: ${cleanScore} pt`;
-      if (goBest) goBest.textContent = `Best in ${game.title}: ${appState.bestScores[game.id] || cleanScore} pt`;
+      if (goBest) goBest.textContent = `${medal ? `${medal} ` : ''}Best in ${game.title}: ${bestNow} pt`;
       document.getElementById('play-gameover')?.classList.remove('hidden');
     },
   };
 
   currentRt = rt;
   currentInstance = game.create(rt);
+  ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
+  currentInstance.render(rt);
   lastTs = performance.now();
 
   const frame = (ts: number) => {
@@ -458,7 +595,7 @@ function launchGame(game: MiniGameDef): void {
     const dt = Number.isFinite(rawDt) ? Math.min(0.05, Math.max(0.001, rawDt)) : 0.016;
     lastTs = ts;
 
-    if (!gameEnded) {
+    if (!gameEnded && gameReady && !gamePaused) {
       currentInstance.update(dt, input, rt);
       input.justPressed = false;
       input.justReleased = false;
@@ -466,6 +603,9 @@ function launchGame(game: MiniGameDef): void {
       input.dx = 0;
       input.dy = 0;
 
+      ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
+      currentInstance.render(rt);
+    } else if (!gameEnded) {
       ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
       currentInstance.render(rt);
     }
@@ -492,7 +632,7 @@ function attachCanvasInput(): void {
   };
 
   canvas.addEventListener('pointerdown', (e) => {
-    if (currentScreen !== 'play' || gameEnded) return;
+    if (currentScreen !== 'play' || gameEnded || gamePaused || !gameReady) return;
     if (activePointerId !== null && activePointerId !== e.pointerId) return;
     activePointerId = e.pointerId;
     try {
@@ -563,7 +703,18 @@ function attachCanvasInput(): void {
   });
 
   window.addEventListener('keydown', (e) => {
-    if (currentScreen !== 'play' || gameEnded || !currentInstance?.onKey || !currentRt) return;
+    if (currentScreen !== 'play' || gameEnded) return;
+    if (e.key === 'Escape') {
+      if (gamePaused) closePauseModal(true);
+      else openPauseModal();
+      return;
+    }
+    if (!gameReady && (e.key === ' ' || e.key === 'Enter')) {
+      e.preventDefault();
+      beginActivePlay();
+      return;
+    }
+    if (gamePaused || !gameReady || !currentInstance?.onKey || !currentRt) return;
     if (e.key.startsWith('Arrow') || e.key === ' ') {
       e.preventDefault();
     }
@@ -614,7 +765,7 @@ async function renderHighscores(): Promise<void> {
         <div class="hs-left">
           <span class="hs-rank">#${i + 1}</span>
           <div>
-            <div class="hs-name">${g.icon} ${escapeHtml(g.title)}</div>
+            <div class="hs-name">${g.icon} ${escapeHtml(g.title)} ${getMedal(appState.bestScores[g.id] || 0)}</div>
             <div class="hs-meta">Played ${appState.playCounts[g.id] || 1}×</div>
           </div>
         </div>
@@ -699,6 +850,18 @@ async function init(): Promise<void> {
     renderHub();
   });
 
+  document.getElementById('btn-more-games')?.addEventListener('click', () => {
+    document.getElementById('more-games-modal')?.classList.remove('hidden');
+  });
+  document.getElementById('btn-more-close')?.addEventListener('click', () => {
+    document.getElementById('more-games-modal')?.classList.add('hidden');
+  });
+  document.getElementById('more-games-modal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      document.getElementById('more-games-modal')?.classList.add('hidden');
+    }
+  });
+
   document.getElementById('btn-random')?.addEventListener('click', () => {
     const pick = ALL_GAMES[Math.floor(Math.random() * ALL_GAMES.length)];
     launchGame(pick);
@@ -709,7 +872,31 @@ async function init(): Promise<void> {
     showScreen('highscores');
   });
   document.getElementById('btn-opt')?.addEventListener('click', () => showScreen('options'));
-  document.getElementById('btn-back-hub')?.addEventListener('click', () => showScreen('hub'));
+  document.getElementById('btn-play-pause')?.addEventListener('click', () => openPauseModal());
+  document.getElementById('btn-ready-start')?.addEventListener('click', () => beginActivePlay());
+  document.getElementById('play-ready')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) beginActivePlay();
+  });
+
+  document.getElementById('btn-pause-resume')?.addEventListener('click', () => closePauseModal(true));
+  document.getElementById('btn-pause-restart')?.addEventListener('click', () => {
+    closePauseModal(false);
+    if (currentGame) launchGame(currentGame);
+  });
+  document.getElementById('btn-pause-random')?.addEventListener('click', () => {
+    closePauseModal(false);
+    launchGame(pickRandomOtherGame());
+  });
+  document.getElementById('btn-pause-hub')?.addEventListener('click', () => {
+    const btn = document.getElementById('btn-pause-hub');
+    if (!confirmQuitArmed) {
+      confirmQuitArmed = true;
+      if (btn) btn.textContent = '⚠ Tap again to Quit';
+      return;
+    }
+    showScreen('hub');
+  });
+
   document.getElementById('btn-hs-back')?.addEventListener('click', () => showScreen('hub'));
   document.getElementById('btn-opt-back')?.addEventListener('click', () => showScreen('hub'));
   document.getElementById('btn-hs-refresh')?.addEventListener('click', () => renderHighscores());
@@ -733,6 +920,9 @@ async function init(): Promise<void> {
   });
   document.getElementById('btn-go-replay')?.addEventListener('click', () => {
     if (currentGame) launchGame(currentGame);
+  });
+  document.getElementById('btn-go-next')?.addEventListener('click', () => {
+    launchGame(pickRandomOtherGame());
   });
   document.getElementById('btn-go-hub')?.addEventListener('click', () => showScreen('hub'));
   document.getElementById('btn-go-hs')?.addEventListener('click', () => {
@@ -787,3 +977,4 @@ async function init(): Promise<void> {
 }
 
 init();
+

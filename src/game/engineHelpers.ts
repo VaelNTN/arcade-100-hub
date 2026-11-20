@@ -207,15 +207,50 @@ export function drawGlowLine(
   ctx.restore();
 }
 
-export function drawLives(ctx: CanvasRenderingContext2D, lives: number, max = 3): void {
-  const safeMax = Math.max(1, max);
-  const pillW = safeMax * 22 + 16;
-  drawRoundedBox(ctx, W - pillW - 10, 10, pillW, 30, 15, 'rgba(9, 13, 22, 0.65)', 'rgba(255,255,255,0.18)');
-  let out = '';
-  for (let i = 0; i < safeMax; i++) {
-    out += i < lives ? '❤️' : '🖤';
+function drawVectorHeart(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  filled: boolean
+): void {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.beginPath();
+  ctx.moveTo(0, size * 0.42);
+  ctx.bezierCurveTo(-size * 0.9, -size * 0.12, -size * 0.62, -size * 0.82, 0, -size * 0.28);
+  ctx.bezierCurveTo(size * 0.62, -size * 0.82, size * 0.9, -size * 0.12, 0, size * 0.42);
+  ctx.closePath();
+  if (filled) {
+    ctx.fillStyle = '#f43f5e';
+    ctx.fill();
+    ctx.strokeStyle = '#fda4af';
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.arc(-size * 0.24, -size * 0.22, size * 0.14, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = 'rgba(30, 41, 59, 0.75)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
   }
-  drawBadgeText(ctx, out, W - 18, 25, '#fff', 15, 'right');
+  ctx.restore();
+}
+
+export function drawLives(ctx: CanvasRenderingContext2D, lives: number, max = 3): void {
+  const safeMax = Math.max(1, Math.min(8, max));
+  const spacing = 20;
+  const pillW = safeMax * spacing + 16;
+  const pillX = W - pillW - 10;
+  drawRoundedBox(ctx, pillX, 10, pillW, 30, 15, 'rgba(9, 13, 22, 0.72)', 'rgba(255,255,255,0.2)');
+  for (let i = 0; i < safeMax; i++) {
+    const hx = pillX + 18 + i * spacing;
+    drawVectorHeart(ctx, hx, 26, 8.5, i < lives);
+  }
 }
 
 export interface Burst {
